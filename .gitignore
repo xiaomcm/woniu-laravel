@@ -55,3 +55,6 @@ Thumbs.db
 /tools/_tmp_*
 # WorkBuddy 本地工作记忆（不属于项目代码）
 /.workbuddy
+
+# 发版打包产物
+/dist
