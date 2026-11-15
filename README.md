@@ -5,6 +5,7 @@
 
 源码：<https://github.com/xiaomcm/woniu-laravel>
 官网：<https://www.34995549.xyz/>
+版权归作者所有（QQ 34995549），可以自用、修改和商用；转载请保留署名与官网地址。
 
 ## 能做什么
 
