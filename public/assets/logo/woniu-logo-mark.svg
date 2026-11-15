@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="蜗牛图床 WONIU 标志">
+  <defs>
+    <linearGradient id="woniu" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7d8cff"/>
+      <stop offset="1" stop-color="#a277ff"/>
+    </linearGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".18"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="116" fill="url(#woniu)"/>
+  <rect width="512" height="512" rx="116" fill="url(#sheen)"/>
+  <path d="M243 226 C243 202 274 194 288 214 C307 243 277 282 238 278 C186 273 170 211 208 177 C253 137 326 163 338 231 C352 313 285 373 201 363"
+        fill="none" stroke="#ffffff" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M132 372 C180 352 238 372 292 360 C338 350 372 328 386 296"
+        fill="none" stroke="#ffffff" stroke-width="30" stroke-linecap="round"/>
+  <circle cx="388" cy="290" r="15" fill="#ffffff"/>
+  <path d="M390 278 C396 248 405 226 418 208" fill="none" stroke="#ffffff" stroke-width="11" stroke-linecap="round"/>
+  <path d="M401 287 C422 272 437 260 450 254" fill="none" stroke="#ffffff" stroke-width="11" stroke-linecap="round"/>
+  <circle cx="420" cy="204" r="9" fill="#ffffff"/>
+  <circle cx="454" cy="252" r="9" fill="#ffffff"/>
+</svg>
