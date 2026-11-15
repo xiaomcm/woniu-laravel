@@ -40,45 +40,64 @@ mkdir -p storage/uploads storage/thumbs storage/cache storage/logs storage/sessi
 装完记得进后台把管理员密码改掉，再确认「系统设置」里的站点地址填对了。
 本地演示用的默认管理员是 `admin` / `admin`，正式安装时在安装向导里自己设一个。
 
-用宝塔面板的话，直接翻 INSTALL.md 的 3.5，从装 PHP、建站点到配 SSL 一步一步
-都写好了，照着点就行，不用手写 Nginx 配置。完整的部署步骤、伪静态规则、
-目录权限、常见问题，还有从 GitHub 更新的办法，也都在 INSTALL.md 里。
+## 宝塔面板安装
 
-## 代码大概怎么放
+用宝塔的话照下面点一遍就行，不用手写 Nginx 配置。Windows 面板步骤一样，路径换成 `C:\...`。
 
-`app/` 是业务逻辑，`config/` 放配置，`resources/views/` 是页面模板，
-`public/` 是唯一对外能访问的目录，`storage/` 存上传的图片、缩略图、日志和数据库。
-仓库里不含 `vendor/`、`.env` 和 `storage/` 下的运行时数据，这些要么靠 composer 装，
-要么由安装向导或程序运行的时候写出来，`git pull` 更新不会碰它们。
+1. **装 PHP 8.3**。软件商店 → 运行环境 → PHP 8.3（FPM 模式）。装完在「设置 → 安装扩展」里确认 `pdo_mysql` 或 `pdo_sqlite`、`gd`、`mbstring`、`fileinfo`、`curl`、`openssl` 都在，`zip` 和 `exif` 可选。再到「禁用函数」里把 `putenv`、`proc_open`、`pcntl_signal` 删掉，Composer 装依赖会用到，装完可以加回去。队列、Redis、Supervisor、ImageMagick 都不用装。
 
-## 常用命令
+2. **新建站点**。网站 → 添加站点，域名填自己的，根目录保持默认，数据库选 MySQL 并记下库名、账号、密码（也可以不建，后面用 SQLite），PHP 版本选刚装的 8.3。
+
+3. **上传代码**。文件管理上传 zip 解压，保证 `composer.json`、`app/`、`public/` 直接在站点根目录这一层，别多套一层文件夹。或者在面板终端里拉代码，以后 `git pull` 更新也方便：
 
 ```bash
-php artisan serve         # 本地起个开发服务器
-php artisan route:list    # 看路由
-php artisan migrate       # 建表
-php artisan config:clear  # 清配置缓存
-php artisan view:clear    # 清视图缓存
-php artisan test          # 跑测试
+cd /www/wwwroot/img.example.com
+git clone https://github.com/xiaomcm/woniu-laravel.git .
 ```
 
-`php artisan test` 目前是 145 个用例、682 条断言。测试用的是单独的库，
-不会碰到站点正在用的数据。
+结尾那个 `.` 表示克隆到当前目录，不加会多出一层子目录。
 
-## 从 GitHub 更新
-
-用 git 装的站，拉一下新代码就行：
+4. **装依赖、建目录**。继续在终端里跑：
 
 ```bash
-git pull origin main
+cd /www/wwwroot/img.example.com
 composer install --no-dev --optimize-autoloader
-php artisan config:clear
-php artisan view:clear
+cp .env.example .env
+mkdir -p storage/uploads storage/thumbs storage/cache storage/logs storage/sessions storage/tmp
 ```
 
-更新前先备份数据库和 `config/installed.php`。站点数据都在 `storage/` 和
-`config/installed.php` 里，拉代码不会覆盖。具体看 INSTALL.md 第八节。
+别把本地 Windows 上的 `vendor/` 传上服务器，平台相关的二进制不通用。宝塔一般自带 Composer，没有就按官方文档装一个。这里同样不用跑 `php artisan key:generate`。
 
-## 其它
+5. **设运行目录**。网站 → 点站点名 → 网站目录，运行目录选 `/public` 保存，然后把 **「防跨站攻击（open_basedir）」关掉**。开着的话 PHP 只能读 `public/`，读不到上一级的 `vendor/` 和 `storage/`，页面直接白屏 500，日志里是 `open_basedir restriction in effect`。关掉后由运行目录本身限定 Web 访问范围就行。
 
-数据表的字段说明放在 DATA_SCHEMA.md，改代码或者写迁移的时候可以翻一下。
+6. **配伪静态**。网站设置 → 伪静态，清空原有内容，粘贴后保存：
+
+```nginx
+location / {
+    try_files $uri $uri/ /index.php?$query_string;
+}
+```
+
+不要给 `/uploads/`、`/thumbs/`、`/covers/` 加 `alias` 或静态直出规则，这三个路径要交给 PHP 做密码校验和审核状态判断。Apache 环境不用填，用 `public/.htaccess`，确认面板允许重写即可。
+
+7. **放开上传体积**。网站设置 → 配置文件，在 `server { }` 里加一行 `client_max_body_size 34m;`；再到 PHP 8.3 的「配置修改」把 `upload_max_filesize` 和 `post_max_size` 改成 `32M`、`max_execution_time` 改成 `120`，重载 PHP。后台「图片处理 → 单张最大体积」别超过这个数，不然大图会 413 或被 PHP 截断。
+
+8. **设权限**。站点目录设 `755`、所有者 `www`，`config/` 和 `storage/` 都要可写，安装向导要写 `config/installed.php`。别用 777。
+
+```bash
+chown -R www:www /www/wwwroot/img.example.com
+chmod -R 755 /www/wwwroot/img.example.com
+```
+
+9. **配 SSL**。网站 → SSL → Let's Encrypt → 申请，签发后打开强制 HTTPS。装完进后台「系统设置 → 常规设置」把站点地址改成 `https://` 开头，否则图片链接还是 http，会被浏览器拦成混合内容。
+
+10. **跑安装向导**。浏览器访问域名，会自动跳到 `/install`：数据库类型选 MySQL 或 SQLite，主机 `127.0.0.1`、端口 `3306`，库名账号密码填第 2 步记下的那组，表前缀留空，站点地址填带 `https://` 的域名，管理员账号密码自己设（密码至少 5 位）。点「开始安装」就会建表并写好 `config/installed.php` 和 `install.lock`。装完立刻登录后台改密码。
+
+完整的字段说明、伪静态规则和常见报错（白屏 500、首页以外全 404、`Class "..." not found` 等）在 INSTALL.md 的 3.5。
+
+## 关于
+
+作者 QQ 34995549。这套代码可以自己部署、改成自己要的样子，也能拿去做商业用途；
+转载或二次分发请保留作者署名、官网和源码地址，别把这几处换成自己的。
+
+数据表字段说明在 DATA_SCHEMA.md，命令行部署、伪静态、目录权限和常见问题在 INSTALL.md。
