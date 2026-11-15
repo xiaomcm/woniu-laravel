@@ -212,8 +212,9 @@ proxy_set_header Host $host;
 
 ### 3.5 宝塔面板完整安装流程
 
-照着宝塔 Linux 面板 9.x 的菜单做就行，不用手写 Nginx 配置文件。
-Windows 面板步骤一样，路径换成 `C:\...`。
+按下面的顺序做，一步做完再做下一步。跳步最容易出白屏和 404。
+照着宝塔 Linux 面板 9.x 的菜单点就行，不用手写 Nginx 配置文件。
+Windows 面板步骤一样，路径换成 `C:\...`。下面用 `img.example.com` 举例子，换成自己的域名。
 
 #### 第 1 步：装 PHP 8.3 和必需扩展
 
@@ -231,12 +232,14 @@ Windows 面板步骤一样，路径换成 `C:\...`。
 | `zip`（可选） | 打包下载 | 仅影响打包功能 |
 | `exif`（可选） | 照片方向自动旋转 | 部分手机照片横过来 |
 
-再进 **设置 → 禁用函数**，把 `putenv`、`proc_open`、`pcntl_signal` 从禁用列表里删掉
-（Composer 装依赖时会用到；装完可以再加回去）。
-
 > 不需要装队列、Redis、Supervisor、ImageMagick。本程序没有队列与计划任务。
 
-#### 第 2 步：新建站点
+#### 第 2 步：放开 PHP 禁用函数
+
+还是 PHP 8.3 的 **设置 → 禁用函数**，把 `putenv`、`proc_open`、`pcntl_signal`
+从禁用列表里删掉。第 5 步装 Composer 依赖时会用到，装完可以再加回去。
+
+#### 第 3 步：新建站点
 
 **网站 → 添加站点**：
 
@@ -249,7 +252,7 @@ Windows 面板步骤一样，路径换成 `C:\...`。
 
 建好后先别急着访问，继续下面几步。
 
-#### 第 3 步：上传代码
+#### 第 4 步：上传代码
 
 两种方式任选：
 
@@ -266,7 +269,7 @@ git clone https://github.com/xiaomcm/woniu-laravel.git .
 > 结尾那个 `.` 表示克隆到当前目录，不加会多出一层子目录。
 > 面板没装 Git 的话：`yum install -y git`（Debian/Ubuntu 用 `apt install -y git`）。
 
-#### 第 4 步：装 Composer 依赖
+#### 第 5 步：装 Composer 依赖
 
 继续在终端里：
 
@@ -278,7 +281,9 @@ composer install --no-dev --optimize-autoloader
 宝塔一般自带 `composer`，没有就执行 `composer -V` 看提示，或按官方文档装。
 **不要**把本地 Windows 上的 `vendor/` 传上服务器 —— 平台相关的二进制不通用。
 
-依赖装完后补一份框架层的兜底配置：
+#### 第 6 步：备 .env、建运行时目录
+
+继续在终端里，补一份框架层的兜底配置并建出运行时目录：
 
 ```bash
 cp .env.example .env
@@ -287,7 +292,7 @@ mkdir -p storage/uploads storage/thumbs storage/cache storage/logs storage/sessi
 
 > 不用跑 `php artisan key:generate`，理由见 5.1 第 3 步。
 
-#### 第 5 步：设置运行目录
+#### 第 7 步：设置运行目录
 
 **网站 → 点站点名 → 网站目录**：
 
@@ -299,7 +304,7 @@ mkdir -p storage/uploads storage/thumbs storage/cache storage/logs storage/sessi
 `open_basedir restriction in effect`。关掉后由「运行目录」本身保证 Web 访问范围，
 安全性不受影响。
 
-#### 第 6 步：配伪静态
+#### 第 8 步：配伪静态
 
 **网站设置 → 伪静态**，清空原有内容，粘贴：
 
@@ -315,7 +320,7 @@ location / {
 Apache 环境不用填伪静态，`public/.htaccess` 已经带好了，确认面板允许 `.htaccess`
 覆盖（「网站目录 → 允许重写」）即可。
 
-#### 第 7 步：放开上传体积
+#### 第 9 步：放开上传体积
 
 两处都要改，否则大图上传会 413 或被 PHP 截断：
 
@@ -326,7 +331,7 @@ Apache 环境不用填伪静态，`public/.htaccess` 已经带好了，确认面
 
 程序后台「图片处理 → 单张最大体积」也要同步设置，别超过这里的数值。
 
-#### 第 8 步：设置目录权限
+#### 第 10 步：设置目录权限
 
 **文件管理**里选中站点目录 → **权限**，设 `755`、所有者 `www`。命令行等价写法：
 
@@ -340,39 +345,43 @@ chmod -R 755 /www/wwwroot/img.example.com/config
 `config/` 必须可写（安装向导要写 `config/installed.php`），`storage/` 全程要写。
 **别用 777。**
 
-#### 第 9 步：配 SSL
+#### 第 11 步：配 SSL
 
 **网站 → SSL → Let's Encrypt → 申请**，签发后打开「强制 HTTPS」。
-装完记得进后台「系统设置 → 常规设置」把站点地址改成 `https://` 开头，
-否则图片链接仍是 http，会被浏览器拦成混合内容。
 
-#### 第 10 步：跑安装向导
+#### 第 12 步：跑安装向导
 
 浏览器访问 `https://img.example.com`，会自动跳到 `/install`：
 
 | 字段 | 填法 |
 |---|---|
-| 数据库类型 | MySQL（第 2 步建的）或 SQLite（免配置，库文件落在 `storage/`） |
+| 数据库类型 | MySQL（第 3 步建的）或 SQLite（免配置，库文件落在 `storage/`） |
 | 主机 / 端口 | `127.0.0.1` / `3306` |
-| 库名 / 账号 / 密码 | 第 2 步记下的那组 |
+| 库名 / 账号 / 密码 | 第 3 步记下的那组 |
 | 表前缀 | 留空 |
 | 站点地址 | `https://img.example.com` |
 | 管理员账号 / 邮箱 / 密码 | 自行设置，密码至少 5 位 |
 
-点「开始安装」，向导会建 23 张表、写好 `config/installed.php` 和 `install.lock`，装完就好了。
-**装完立刻用管理员账号登录后台改密码。**
+点「开始安装」，向导会建 23 张表、写好 `config/installed.php` 和 `install.lock`。
+
+#### 第 13 步：装完先做三件事
+
+1. 用管理员账号登录后台，把密码改掉
+2. 进「系统设置 → 常规设置」，确认站点地址是 `https://` 开头，否则图片链接仍是 http，
+   会被浏览器拦成混合内容
+3. 传一张图试试，确认直链和缩略图都能打开
 
 #### 宝塔环境常见问题
 
 | 现象 | 原因 | 解决 |
 |---|---|---|
-| 白屏 500，日志 `open_basedir restriction in effect` | 第 5 步的「防跨站攻击」没关 | 网站目录 → 关闭防跨站攻击 |
-| 访问域名显示宝塔默认页 / 404 | 运行目录没设成 `/public` | 网站目录 → 运行目录选 `/public` |
-| 所有页面 404（首页除外） | 伪静态没配或没保存 | 按第 6 步重贴规则，保存后重载 Nginx |
-| `Class "..." not found` | 没跑 `composer install` 或传了本地 `vendor/` | 删掉 `vendor/`，在服务器重新 `composer install` |
-| 上传大图 413 Request Entity Too Large | 只改了 PHP 没改 Nginx | 第 7 步两处都要改 |
-| 上传后缩略图空白 / 报 `GD` 相关错误 | PHP 缺 `gd` 或 `fileinfo` | 软件商店 → PHP 8.3 → 安装扩展 |
-| 登录后立刻掉线、反复跳登录页 | `storage/sessions` 不可写或所有者不对 | 第 8 步重设权限与所有者 `www` |
+| 白屏 500，日志 `open_basedir restriction in effect` | 第 7 步的「防跨站攻击」没关 | 网站目录 → 关闭防跨站攻击 |
+| 访问域名显示宝塔默认页 / 404 | 运行目录没设成 `/public` | 第 7 步：网站目录 → 运行目录选 `/public` |
+| 所有页面 404（首页除外） | 伪静态没配或没保存 | 第 8 步：重贴规则，保存后重载 Nginx |
+| `Class "..." not found` | 没跑 `composer install` 或传了本地 `vendor/` | 第 5 步：删掉 `vendor/`，在服务器重新装一次 |
+| 上传大图 413 Request Entity Too Large | 只改了 PHP 没改 Nginx | 第 9 步：Nginx 和 PHP 两处都要改 |
+| 上传后缩略图空白 / 报 `GD` 相关错误 | PHP 缺 `gd` 或 `fileinfo` | 第 1 步：软件商店 → PHP 8.3 → 安装扩展 |
+| 登录后立刻掉线、反复跳登录页 | `storage/sessions` 不可写或所有者不对 | 第 10 步：重设权限与所有者 `www` |
 | 后台操作日志 IP 全是 `127.0.0.1` | 反代没传真实 IP | 按 3.4 第 3 点补 `X-Forwarded-For` |
 | 想重装但 `/install` 已锁 | `install.lock` 存在 | 删 `install.lock` 与 `config/installed.php` 再访问（**先备份**） |
 
