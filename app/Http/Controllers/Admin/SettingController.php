@@ -22,6 +22,8 @@ class SettingController extends Controller
     private const TEXT_KEYS = [
         'site_name', 'site_description', 'site_url', 'site_icp', 'site_footer',
         'admin_title',
+        // SEO：副标题、SEO 介绍、关键词
+        'site_subtitle', 'site_seo_description', 'site_keywords',
         'register_invite', 'upload_allowed', 'upload_path_format',
         'watermark_type', 'watermark_text', 'watermark_position',
         'hotlink_domains', 'site_notice',

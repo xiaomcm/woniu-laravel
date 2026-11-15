@@ -8,6 +8,15 @@
 $pageTitle = $pageTitle ?? '首页';
 $siteName = (string) ($siteSettings['site_name'] ?? '蜗牛图床');
 $siteDesc = (string) ($siteSettings['site_description'] ?? '极速、稳定、优雅的图片托管服务');
+// SEO：副标题拼进标题；SEO 介绍优先，留空回落到站点描述；关键词直接进 meta
+$siteSubtitle = trim((string) ($siteSettings['site_subtitle'] ?? ''));
+$seoDesc = trim((string) ($siteSettings['site_seo_description'] ?? ''));
+$seoDesc = $seoDesc !== '' ? $seoDesc : $siteDesc;
+$seoKeywords = trim((string) ($siteSettings['site_keywords'] ?? ''));
+// 标题：首页用「站名 · 副标题」，内页用「页名 · 站名」，再没副标题就只剩站名
+$fullTitle = $siteSubtitle !== ''
+    ? ($pageTitle === '首页' ? $siteName . ' · ' . $siteSubtitle : $pageTitle . ' · ' . $siteName)
+    : ($pageTitle === '首页' ? $siteName : $pageTitle . ' · ' . $siteName);
 $logo = (string) ($siteSettings['site_logo'] ?? '');
 $shopOn = (string) ($siteSettings['shop_enabled'] ?? '0') === '1';
 $exploreOn = (string) ($siteSettings['explore_enabled'] ?? '1') === '1';
@@ -28,9 +37,19 @@ if ($footerPages === []) {
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <meta name="description" content="{{ $siteDesc }}">
+    <meta name="description" content="{{ $seoDesc }}">
+    @if ($seoKeywords !== '')
+        <meta name="keywords" content="{{ $seoKeywords }}">
+    @endif
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="{{ $fullTitle }}">
+    <meta property="og:description" content="{{ $seoDesc }}">
+    <meta property="og:site_name" content="{{ $siteName }}">
+    @if (!empty($siteSettings['site_url']))
+        <meta property="og:url" content="{{ $siteSettings['site_url'] }}">
+    @endif
     <meta name="theme-color" content="#05080f">
-    <title>{{ $pageTitle }} · {{ $siteName }}</title>
+    <title>{{ $fullTitle }}</title>
     @if (!empty($siteSettings['site_favicon']))
         <link rel="icon" href="{{ $siteSettings['site_favicon'] }}">
     @endif

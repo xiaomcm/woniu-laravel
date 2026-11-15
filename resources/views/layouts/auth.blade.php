@@ -7,6 +7,8 @@
 
 $pageTitle = $pageTitle ?? '';
 $siteName = (string) ($siteSettings['site_name'] ?? '蜗牛图床');
+$seoDesc = trim((string) ($siteSettings['site_seo_description'] ?? ''));
+$seoDesc = $seoDesc !== '' ? $seoDesc : (string) ($siteSettings['site_description'] ?? '');
 ?>
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -14,6 +16,9 @@ $siteName = (string) ($siteSettings['site_name'] ?? '蜗牛图床');
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    @if ($seoDesc !== '')
+        <meta name="description" content="{{ $seoDesc }}">
+    @endif
     <title>{{ $pageTitle }} · {{ $siteName }}</title>
     @if (!empty($siteSettings['site_favicon']))
         <link rel="icon" href="{{ $siteSettings['site_favicon'] }}">

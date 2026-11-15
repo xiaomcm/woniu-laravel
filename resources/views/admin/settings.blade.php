@@ -42,6 +42,20 @@ $get = static fn (string $key, string $default = ''): string => (string) ($setti
                     <input class="input" name="site_footer" value="{{ $get('site_footer') }}">
                 </div>
             </div>
+            <div class="form-row">
+                <div class="field">
+                    <label class="label">网站副标题 <span class="hint">拼在浏览器标签标题后面，留空只显示站名</span></label>
+                    <input class="input" name="site_subtitle" value="{{ $get('site_subtitle') }}" placeholder="例如：免费图片托管 · 支持外链">
+                </div>
+                <div class="field">
+                    <label class="label">网站关键词 <span class="hint">逗号分隔，给搜索引擎看</span></label>
+                    <input class="input" name="site_keywords" value="{{ $get('site_keywords') }}" placeholder="图床,免费图床,图片外链,图片托管">
+                </div>
+            </div>
+            <div class="field" style="margin-bottom:0">
+                <label class="label">SEO 介绍 <span class="hint">搜索引擎结果里标题下面那段描述，建议 80~160 字；留空回落到上面的「站点描述」</span></label>
+                <textarea class="input" name="site_seo_description" rows="3" placeholder="用一两句话讲清这个站是做什么的、有什么好处">{{ $get('site_seo_description') }}</textarea>
+            </div>
         </div>
     </div>
 
@@ -347,7 +361,7 @@ $get = static fn (string $key, string $default = ''): string => (string) ($setti
                 </label>
                 <label class="switch">
                     <input type="checkbox" name="api_enabled" value="1" {!! $get('api_enabled') === '1' ? 'checked' : '' !!}>
-                    <span class="track"></span><span>启用 API 上传</span>
+                    <span class="track"></span><span>启用 API 接口</span>
                 </label>
             </div>
             <div class="field" style="margin-bottom:0">

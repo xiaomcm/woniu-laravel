@@ -25,6 +25,7 @@ use App\Http\Controllers\Admin\StorageController as AdminStorageController;
 use App\Http\Controllers\Admin\SupportController as AdminSupportController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\AlbumController;
+use App\Http\Controllers\ApiDocsController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CaptchaController;
 use App\Http\Controllers\ExploreController;
@@ -99,6 +100,7 @@ Route::post('/s/{key}', [AlbumController::class, 'unlockShare'])->where('key', '
 Route::get('/settings', [SettingsController::class, 'index']);
 Route::post('/settings/profile', [SettingsController::class, 'updateProfile']);
 Route::post('/settings/password', [SettingsController::class, 'updatePassword']);
+Route::post('/settings/api-enabled', [SettingsController::class, 'updateApiEnabled']);
 Route::post('/settings/tokens', [SettingsController::class, 'createToken']);
 Route::post('/settings/tokens/{id}/delete', [SettingsController::class, 'deleteToken'])->where('id', '[0-9]+');
 
@@ -214,6 +216,9 @@ Route::get('/oauth/callback', [OauthController::class, 'callback']);
 
 Route::get('/notices', [PageController::class, 'notices']);
 Route::get('/p/{slug}', [PageController::class, 'show'])->where('slug', '[A-Za-z0-9_\-]+');
+
+// API 用法文档页。路径用 api-docs 而不是 api/docs，避免和 /api/v1 接口前缀混淆
+Route::get('/api-docs', [ApiDocsController::class, 'index']);
 
 /*
 |--------------------------------------------------------------------------

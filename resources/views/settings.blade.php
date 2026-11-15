@@ -82,11 +82,22 @@
             </div>
         @endif
 
+        {{-- 用户自己的 API 总开关：关掉后令牌保留但全部调不通，重新打开即恢复 --}}
+        <form method="post" action="{{ url('settings/api-enabled') }}" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding-bottom:14px;border-bottom:1px solid var(--line)">
+            {!! csrf_field() !!}
+            <label class="switch">
+                <input type="checkbox" name="api_enabled" value="1" onchange="this.form.submit()" {!! (int) ($user['api_enabled'] ?? 1) === 1 ? 'checked' : '' !!}>
+                <span class="track"></span><span>启用我的 API 接口</span>
+            </label>
+            <span class="hint">关闭后本账号所有令牌立即停用，令牌不会删除，重新打开即可恢复</span>
+            <a class="btn btn-sm" href="{{ url('api-docs') }}" style="margin-left:auto">查看 API 用法</a>
+        </form>
+
         @if ($tokens === [])
             <div class="empty" style="padding:32px 10px">
                 <svg class="ic"><use href="#i-shield"/></svg>
                 <h3>还没有 API 令牌</h3>
-                <div>创建后即可用 <code class="inline">Authorization: Bearer &lt;token&gt;</code> 调用上传接口</div>
+                <div>创建后即可用 <code class="inline">Authorization: Bearer &lt;token&gt;</code> 调用 API，用法见<a href="{{ url('api-docs') }}">接口文档</a></div>
             </div>
         @else
             <div class="table-wrap">

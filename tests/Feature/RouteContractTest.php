@@ -33,6 +33,9 @@ class RouteContractTest extends TestCase
     private const V2_ADDITIONS = [
         'GET /install',
         'POST /install',
+        // API 功能：个人开关 + 用法文档页
+        'POST /settings/api-enabled',
+        'GET /api-docs',
     ];
 
     /**

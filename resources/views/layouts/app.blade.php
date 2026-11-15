@@ -26,6 +26,8 @@ $percent = $capacity > 0 ? min(100, round($usedBytes / $capacity * 100, 1)) : 0;
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    {{-- 控制台是登录后页面，不该被搜索引擎收录 --}}
+    <meta name="robots" content="noindex, nofollow">
     <title>{{ $pageTitle }} · {{ $siteName }}</title>
     @if (!empty($siteSettings['site_favicon']))
         <link rel="icon" href="{{ $siteSettings['site_favicon'] }}">

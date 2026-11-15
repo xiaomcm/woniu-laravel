@@ -7,6 +7,10 @@
 
 $pageTitle = $pageTitle ?? '发现';
 $siteName = (string) ($siteSettings['site_name'] ?? '蜗牛图床');
+// SEO：内页标题 = 页名 · 站名；描述优先用 SEO 介绍，留空回落到站点描述
+$seoDesc = trim((string) ($siteSettings['site_seo_description'] ?? ''));
+$seoDesc = $seoDesc !== '' ? $seoDesc : (string) ($siteSettings['site_description'] ?? '');
+$seoKeywords = trim((string) ($siteSettings['site_keywords'] ?? ''));
 $logo = (string) ($siteSettings['site_logo'] ?? '');
 $shopOn = (string) ($siteSettings['shop_enabled'] ?? '0') === '1';
 $ticketOn = (string) ($siteSettings['ticket_enabled'] ?? '1') === '1';
@@ -23,6 +27,12 @@ try {
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    @if ($seoDesc !== '')
+        <meta name="description" content="{{ $seoDesc }}">
+    @endif
+    @if ($seoKeywords !== '')
+        <meta name="keywords" content="{{ $seoKeywords }}">
+    @endif
     <title>{{ $pageTitle }} · {{ $siteName }}</title>
     @if (!empty($siteSettings['site_favicon']))
         <link rel="icon" href="{{ $siteSettings['site_favicon'] }}">
@@ -48,6 +58,7 @@ try {
             </a>
             <nav class="site-nav">
                 <a class="site-link {!! nav_active('/explore') !!}" href="{{ url('explore') }}">发现广场</a>
+                <a class="site-link {!! nav_active('/api-docs') !!}" href="{{ url('api-docs') }}">API 文档</a>
                 @if ($shopOn)
                     <a class="site-link {!! nav_active('/shop') !!}" href="{{ url('shop') }}">套餐商城</a>
                 @endif
@@ -107,6 +118,9 @@ try {
                         @endif
                         <a href="{{ url('settings') }}">
                             <svg class="ic"><use href="#i-settings"/></svg> 个人设置
+                        </a>
+                        <a href="{{ url('api-docs') }}">
+                            <svg class="ic"><use href="#i-storage"/></svg> API 文档
                         </a>
                         <hr>
                         <form method="post" action="{{ url('logout') }}">

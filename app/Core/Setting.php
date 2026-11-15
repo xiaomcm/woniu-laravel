@@ -20,6 +20,11 @@ class Setting
 
             'site_name'        => '蜗牛图床',
             'site_description' => '简单、快速、稳定的图床程序',
+            // SEO 三件套：副标题拼在标题后面，介绍与关键词进 meta 标签
+            // subtitle 留空时标题只显示站名；seo_description 留空时回落到 site_description
+            'site_subtitle'    => '',
+            'site_seo_description' => '',
+            'site_keywords'    => '',
             'site_url'         => '',
             'site_logo'        => '',
             'site_favicon'     => '',

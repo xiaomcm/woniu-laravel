@@ -87,6 +87,21 @@ class SettingsController extends Controller
         redirect('/settings');
     }
 
+    /**
+     * 用户自己的 API 总开关。关掉后该账号所有令牌立即失效，但令牌本身保留，
+     * 重新打开即可恢复，不用重建令牌。
+     */
+    public function updateApiEnabled(): void
+    {
+        $this->validateCsrf();
+        $user = Auth::requireLogin();
+        $enabled = (string) Request::input('api_enabled', '0') === '1' ? 1 : 0;
+        User::updateById((int) $user['id'], ['api_enabled' => $enabled]);
+        Auth::refresh();
+        flash('success', $enabled === 1 ? 'API 接口已开启' : 'API 接口已关闭，现有令牌暂不可用');
+        redirect('/settings');
+    }
+
     public function createToken(): void
     {
         $this->validateCsrf();

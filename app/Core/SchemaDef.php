@@ -239,6 +239,8 @@ class SchemaDef
                     'status' => ['t' => 'bool', 'default' => '1'],
                     'avatar' => ['t' => 'string', 'len' => 255, 'null' => true],
                     'phone' => ['t' => 'string', 'len' => 32, 'null' => true],
+                    // 用户自己的 API 总开关：0 = 关闭后该账号所有令牌都调不通接口
+                    'api_enabled' => ['t' => 'bool', 'default' => '1'],
                     'created_at' => ['t' => 'datetime'],
                     'updated_at' => ['t' => 'datetime', 'null' => true],
                     'last_login_at' => ['t' => 'datetime', 'null' => true],

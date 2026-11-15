@@ -24,6 +24,12 @@ class ApiController extends Controller
 {
     private function authenticate(): array
     {
+        // 全局开关：站主在后台关掉后，所有需要登录的接口一律停服。
+        // 放在认证最前面，令牌有效也一样挡住，避免出现「关了还能用旧令牌」的错觉。
+        if (!Setting::bool('api_enabled', true)) {
+            $this->api(false, '站点已关闭 API 接口', null, 403);
+        }
+
         $plain = Request::bearer();
         if ($plain !== null && $plain !== '') {
             $token = Token::findByPlain($plain);
@@ -35,11 +41,18 @@ class ApiController extends Controller
             if ($user === null || (int) $user['status'] !== 1) {
                 $this->api(false, '账号不可用', null, 401);
             }
+            // 用户自己关了 API：令牌仍然有效，但调不通任何需要认证的接口
+            if (array_key_exists('api_enabled', $user) && (int) $user['api_enabled'] !== 1) {
+                $this->api(false, '该账号已关闭 API 接口', null, 403);
+            }
             return $user;
         }
 
         $user = Auth::user();
         if ($user !== null) {
+            if (array_key_exists('api_enabled', $user) && (int) $user['api_enabled'] !== 1) {
+                $this->api(false, '该账号已关闭 API 接口', null, 403);
+            }
             return $user;
         }
         $this->api(false, '未提供有效的 API Token', null, 401);
@@ -73,11 +86,8 @@ class ApiController extends Controller
 
     public function upload(): void
     {
+        // 全局开关与用户开关已在 authenticate() 里统一检查
         $user = $this->authenticate();
-
-        if (!Setting::bool('api_enabled', true)) {
-            $this->api(false, '站点已关闭 API 上传', null, 403);
-        }
 
         $files = Request::files('files', 'file');
         $url = (string) Request::input('url', '');

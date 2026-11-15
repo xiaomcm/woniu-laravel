@@ -12,7 +12,7 @@ use PDO;
 
 class Migrator
 {
-    private const VERSION = 8;
+    private const VERSION = 9;
 
     private const TARGET = [
         'images' => [
@@ -33,6 +33,8 @@ class Migrator
             'package_expired_at' => ['sqlite' => 'DATETIME NULL', 'mysql' => 'DATETIME NULL DEFAULT NULL'],
             // 注册短信验证码模式下需要保存手机号
             'phone'              => ['sqlite' => 'VARCHAR(32) NULL', 'mysql' => 'VARCHAR(32) NULL DEFAULT NULL'],
+            // 用户自己的 API 开关，存量用户默认开启（1）
+            'api_enabled'        => ['sqlite' => 'INTEGER NOT NULL DEFAULT 1', 'mysql' => 'TINYINT(1) NOT NULL DEFAULT 1'],
         ],
         'albums' => [
             'password' => ['sqlite' => 'VARCHAR(255) NULL', 'mysql' => 'VARCHAR(255) NULL DEFAULT NULL'],
@@ -85,6 +87,12 @@ class Migrator
         'captcha_tencent_region' => 'ap-guangzhou',
         'captcha_aliyun_endpoint' => 'captcha.cn-shanghai.aliyuncs.com',
         'captcha_aliyun_region'   => 'cn-hangzhou',
+        // API 全局开关：0 = 全站所有账号的 API 都停用
+        'api_enabled'         => '1',
+        // SEO：副标题、SEO 介绍、关键词
+        'site_subtitle'        => '',
+        'site_seo_description' => '',
+        'site_keywords'        => '',
     ];
 
     public static function run(): void
