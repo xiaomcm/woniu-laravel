@@ -98,11 +98,16 @@ class SeoMetaContractTest extends TestCase
         // 全局开关：设置项存在，且默认开启
         $this->assertStringContainsString("'api_enabled'", $this->src('app/Core/Setting.php'));
 
-        // 用户级开关：users 表有字段（新装定义 + 老库升级都要有）
+        // 用户级开关：三处建表/升级路径都要有，漏一处就会出现「新装库里没这个字段」
         $this->assertStringContainsString(
-            "'api_enabled'",
+            'api_enabled',
             $this->src('app/Core/SchemaDef.php'),
-            'users 表定义里缺少 api_enabled'
+            'users 表定义（PG/SQL Server）里缺少 api_enabled'
+        );
+        $this->assertStringContainsString(
+            'api_enabled',
+            $this->src('app/Core/Schema.php'),
+            'users 建表语句（SQLite/MySQL）里缺少 api_enabled'
         );
         $this->assertStringContainsString(
             "'api_enabled'",

@@ -52,6 +52,7 @@ class SchemaContractTest extends TestCase
         'users' => [
             'id', 'name', 'email', 'password', 'group_id', 'capacity',
             'group_expired_at', 'is_admin', 'status', 'avatar', 'phone',
+            'api_enabled',
             'created_at', 'updated_at', 'last_login_at',
         ],
         'images' => [

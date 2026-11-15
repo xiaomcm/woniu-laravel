@@ -126,6 +126,7 @@ class Schema
                     `status` INTEGER NOT NULL DEFAULT 1,
                     `avatar` VARCHAR(255) NULL,
                     `phone` VARCHAR(32) NULL,
+                    `api_enabled` INTEGER NOT NULL DEFAULT 1,
                     `created_at` DATETIME NOT NULL,
                     `updated_at` DATETIME NULL,
                     `last_login_at` DATETIME NULL
@@ -241,6 +242,7 @@ class Schema
                 `status` TINYINT(1) NOT NULL DEFAULT 1,
                 `avatar` VARCHAR(255) NULL DEFAULT NULL,
                 `phone` VARCHAR(32) NULL DEFAULT NULL,
+                `api_enabled` TINYINT(1) NOT NULL DEFAULT 1,
                 `created_at` DATETIME NOT NULL,
                 `updated_at` DATETIME NULL DEFAULT NULL,
                 `last_login_at` DATETIME NULL DEFAULT NULL,
