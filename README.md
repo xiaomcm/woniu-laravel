@@ -243,4 +243,5 @@ chmod -R 755 /www/wwwroot/img.example.com
 转载和修改请保留署名与官网地址。
 
 源码：https://github.com/xiaomcm/woniu-laravel
-数据表字段说明在 DATA_SCHEMA.md，命令行部署、伪静态、目录权限和常见问题在 INSTALL.md。
+数据表字段说明在 DATA_SCHEMA.md，命令行部署、伪静态、目录权限和常见问题在 INSTALL.md，
+每个版本改了什么记在 CHANGELOG.md。
