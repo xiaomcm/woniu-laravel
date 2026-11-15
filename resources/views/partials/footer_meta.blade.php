@@ -3,8 +3,10 @@
  * 全站统一页脚署名行。
  *
  * 内容固定三段，任何页面都一致：
- *   © 年份 站点名 · Powered by WONIU · Powered by 站点名 2.0
+ *   © 年份 v版本号 站点名 · Powered by WONIU · Powered by 站点名
  *
+ * 版本号读 config/defaults.php 的 version（发版时由 tools/release.php 改写），
+ * 不在模板里写死，免得改了版本号页脚还显示旧的。
  * 中间那段读后台「系统设置 → 页脚文字」（site_footer），为空时回落到默认的
  * Powered by WONIU，保证这条信息在任何配置下都不会消失。
  * 独立页面链接（footerPages）与备案号（site_icp）作为附加项插在中间。
@@ -19,12 +21,14 @@ if ($__fmBrand === '') {
     $__fmBrand = 'Powered by WONIU';
 }
 $__fmPages = $footerPages ?? [];
-/* 产品版本号：这一份代码是 2.0 分支，固定 2.0。
-   注意别用 config('app.version') —— 那个值来自 config/defaults.php 的资源版本号，
-   是给静态资源做缓存版本拼接用的，不是产品版本号。 */
-$__fmVer = '2.0';
+
+// 产品版本号：跟 config/defaults.php 的 version 同一个源，发版脚本会同步改
+$__fmVer = trim((string) \App\Core\Config::get('app.version', ''));
 ?>
 <span>&copy; {!! date('Y') !!} {{ $__fmSite }}</span>
+@if ($__fmVer !== '')
+    <span class="dot">·</span><span class="ver">v{{ $__fmVer }}</span>
+@endif
 @foreach ($__fmPages as $__fmPage)
     <span class="dot">·</span><a href="{{ url('p/' . (string) $__fmPage['slug']) }}" style="color:inherit">{{ (string) $__fmPage['title'] }}</a>
 @endforeach
@@ -32,4 +36,4 @@ $__fmVer = '2.0';
 @if (!empty($siteSettings['site_icp']))
     <span class="dot">·</span><span>{{ (string) $siteSettings['site_icp'] }}</span>
 @endif
-<span class="dot">·</span><span>Powered by {{ $__fmSite }} {{ $__fmVer }}</span>
+<span class="dot">·</span><span>Powered by {{ $__fmSite }}</span>

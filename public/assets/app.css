@@ -788,6 +788,23 @@ pre.code-block code {
     display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px;
     font-size: 12.5px; color: var(--muted); text-align: center;
 }
+/* 页脚版本号：等宽小字，跟版权同一行但不抢视线 */
+.app-foot .ver, .auth-foot-brand .ver, .blank-foot .ver {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px; letter-spacing: .2px; opacity: .9;
+}
+
+/* 后台侧栏底部的版本号：跟导航分隔开，折叠态只留 v 号 */
+.sidebar-ver {
+    margin-top: 12px; padding: 10px 10px 2px;
+    border-top: 1px solid var(--border);
+    font-size: 11.5px; color: var(--muted);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    display: flex; align-items: center; gap: 6px; white-space: nowrap;
+}
+.sidebar-ver .num { opacity: .85; }
+.sidebar-collapsed .sidebar-ver { justify-content: center; padding-left: 0; padding-right: 0; }
+.sidebar-collapsed .sidebar-ver .label { display: none; }
 /* 用户中心 / 后台：贴在内容区底部，内容短时也沉底 */
 .app-foot {
     margin-top: auto; padding: 20px 24px 26px;

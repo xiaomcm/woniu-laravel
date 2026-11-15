@@ -39,12 +39,11 @@ class FooterContractTest extends TestCase
         $this->assertStringContainsString('&copy;', $code, '页脚缺少版权段');
         // 品牌段：后台没配 site_footer 时的兜底
         $this->assertStringContainsString('Powered by WONIU', $code, '页脚缺少 Powered by WONIU 兜底');
-        // 版本段
-        $this->assertStringContainsString('Powered by', $code, '页脚缺少版本段');
         // 站点名来自配置，不能写死
         $this->assertStringContainsString("site_name", $code, '页脚的站点名没有读配置');
-        // 版本号固定为产品版本
-        $this->assertStringContainsString("'2.0'", $code, '页脚版本号不是产品版本');
+        // 版本段：读配置里的产品版本，不能写死（发版时版本号会变）
+        $this->assertStringContainsString('app.version', $code, '页脚的版本号没有读配置');
+        $this->assertStringContainsString('Powered by', $code, '页脚缺少版本段');
     }
 
     public function test_every_layout_includes_footer_partial(): void

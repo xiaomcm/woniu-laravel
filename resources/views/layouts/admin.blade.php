@@ -113,6 +113,13 @@ $brandName = $adminTitle !== '' ? $adminTitle : $siteName . ' 后台';
         <a class="nav-item {!! str_starts_with($cp, '/admin/logs') ? 'active' : '' !!}" href="{{ url('admin/logs') }}">
             <svg class="ic"><use href="#i-clock"/></svg><span>操作日志</span>
         </a>
+
+        <?php $__adminVer = trim((string) \App\Core\Config::get('app.version', '')); ?>
+        @if ($__adminVer !== '')
+            <div class="sidebar-ver" title="当前程序版本 {{ $__adminVer }}">
+                <span class="label">版本</span><span class="num">v{{ $__adminVer }}</span>
+            </div>
+        @endif
     </aside>
 
     <div class="main">
