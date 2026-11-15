@@ -1,0 +1,188 @@
+/* 蜗牛图床 WONIU | 作者 QQ 34995549 | 官网 www.zhujitown.com */
+/*
+ * 灯箱样式：全屏预览、自由拖拽、键盘切换、滚轮缩放
+ * 独立成文件，不动 app.css —— 灯箱是可选功能，关掉设置后整块资源都不会被引用
+ */
+
+.lb-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(6, 8, 13, .94);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    color: #e9ecf3;
+    font-size: 14px;
+}
+
+/* hidden 属性优先：JS 用它控制显示/隐藏 */
+.lb-overlay[hidden] { display: none; }
+
+/* 打开时锁住页面滚动 */
+body.lb-locked { overflow: hidden; }
+
+.lb-stage {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 64px 72px 86px;
+    /* 屏幕范围就是拖拽边界：图片可自由移到视口任意位置，超出部分才裁掉 */
+    overflow: hidden;
+    cursor: grab;
+    /* 触屏拖拽不能被浏览器的滚动 / 双指缩放抢走 */
+    touch-action: none;
+}
+.lb-stage.lb-zoomed { cursor: grab; }
+.lb-stage.lb-dragging { cursor: grabbing; }
+
+.lb-img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    transform-origin: center center;
+    transition: transform .16s ease-out;
+    user-select: none;
+    -webkit-user-drag: none;
+    touch-action: none;
+    border-radius: 4px;
+    box-shadow: 0 18px 60px rgba(0, 0, 0, .55);
+}
+/* 拖拽 / 滚轮缩放过程中关掉过渡，否则会拖出一条残影 */
+.lb-overlay.lb-no-anim .lb-img { transition: none; }
+
+.lb-loading,
+.lb-error {
+    position: absolute;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    color: rgba(233, 236, 243, .75);
+    font-size: 13px;
+}
+.lb-loading.lb-on,
+.lb-error.lb-on { display: flex; }
+.lb-error { color: #ff8f8f; }
+
+.lb-spinner {
+    width: 26px;
+    height: 26px;
+    border: 2px solid rgba(233, 236, 243, .25);
+    border-top-color: #e9ecf3;
+    border-radius: 50%;
+    animation: lbSpin .8s linear infinite;
+}
+@keyframes lbSpin {
+    to { transform: rotate(360deg); }
+}
+
+.lb-btn {
+    position: absolute;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .1);
+    color: #e9ecf3;
+    cursor: pointer;
+    transition: background .15s ease;
+}
+.lb-btn:hover { background: rgba(255, 255, 255, .24); }
+.lb-btn .ic { width: 20px; height: 20px; }
+.lb-btn[hidden] { display: none; }
+
+.lb-close { top: 18px; right: 18px; }
+.lb-prev  { left: 16px; top: 50%; margin-top: -20px; }
+.lb-next  { right: 16px; top: 50%; margin-top: -20px; }
+
+.lb-bar {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    background: linear-gradient(to top, rgba(6, 8, 13, .86), rgba(6, 8, 13, 0));
+}
+.lb-caption {
+    max-width: 46vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.lb-spacer { flex: 1; }
+.lb-counter {
+    color: rgba(233, 236, 243, .6);
+    font-variant-numeric: tabular-nums;
+}
+.lb-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 11px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, .1);
+    color: inherit;
+    font-size: 13px;
+    white-space: nowrap;
+    transition: background .15s ease;
+}
+.lb-action:hover { background: rgba(255, 255, 255, .24); color: #fff; }
+.lb-action .ic { width: 15px; height: 15px; }
+
+/* 列表页的灯箱入口：悬停卡片才出现，触屏上常驻 */
+.lb-trigger {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: rgba(10, 14, 22, .58);
+    color: #fff;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity .18s ease, background .18s ease;
+}
+.lb-trigger .ic { width: 16px; height: 16px; }
+.gallery-item:hover .lb-trigger,
+.image-card:hover .lb-trigger { opacity: 1; }
+.lb-trigger:hover { background: rgba(10, 14, 22, .82); }
+.lb-trigger:focus-visible { opacity: 1; outline: 2px solid #fff; outline-offset: 1px; }
+
+/* 图片本体就是灯箱入口：给个放大镜光标，提示可以点开 */
+img[data-lightbox-src] { cursor: zoom-in; }
+a[data-lightbox-src] { cursor: zoom-in; }
+
+@media (hover: none) {
+    /* 触屏没有 hover，按钮常驻显示 */
+    .lb-trigger { opacity: 1; }
+}
+
+@media (max-width: 640px) {
+    .lb-stage { padding: 56px 14px 78px; }
+    .lb-prev, .lb-next { width: 34px; height: 34px; }
+    .lb-caption { max-width: 38vw; }
+    .lb-action span { display: none; }
+    .lb-action { padding: 6px 8px; }
+}
