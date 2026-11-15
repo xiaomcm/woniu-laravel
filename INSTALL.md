@@ -1,8 +1,5 @@
 # 蜗牛图床 WONIU — 安装说明
 
-> 本文里的扩展清单、配置项都是**按本程序代码实际用到的**列出来的，不是照抄别家产品。
-> 每一条都经过本地实测。
-
 ---
 
 ## 一、环境要求
@@ -101,7 +98,7 @@ client_max_body_size 34m;
 
 ## 三、Web 服务器与伪静态
 
-### 3.1 铁律：站点根目录必须是 `public/`
+### 3.1 站点根目录要指向 `public/`
 
 ```
 /www/wwwroot/img.example.com/          ← 网站根目录
@@ -115,7 +112,7 @@ client_max_body_size 34m;
     └── assets/
 ```
 
-把根目录指到项目根目录会让 `config/installed.php`（里面有数据库密码）暴露在公网上。**务必指到 `public/`。**
+把根目录指到项目根目录，`config/installed.php`（里面有数据库密码）就会暴露在公网上，所以指到 `public/`。
 
 ### 3.2 Nginx
 
@@ -175,9 +172,9 @@ server {
 </VirtualHost>
 ```
 
-### 3.4 伪静态的三条注意事项
+### 3.4 配伪静态时还要注意几点
 
-**① 不要让 Nginx 直接吐图片文件。**
+**1. 别让 Nginx 直接输出图片文件。**
 
 本程序的 `/uploads/*`、`/thumbs/*`、`/covers/*` 三个路径**必须进 PHP**：
 
@@ -186,18 +183,18 @@ server {
 - 审核状态判断
 - 角色组的访问权限
 
-很多图床直接把图片丢到 CDN 或让 Nginx 直接读文件，那套做法在这套程序上**会导致私密图泄露**。请不要加这样的规则：
+很多图床把图片丢到 CDN，或者让 Nginx 直接读文件，这套程序不能这么干，**会让私密图泄露**。下面这种规则别加：
 
 ```nginx
-# ❌ 不要这样写
+# 别这么写
 location ^~ /uploads/ { alias /www/wwwroot/img.example.com/storage/uploads/; }
 ```
 
-**② `storage/` 和 `config/` 不要挪进 `public/`。**
+**2. `storage/` 和 `config/` 别挪进 `public/`。**
 
 它们本来就在 `public/` 之外，Nginx 不会暴露。挪进去等于把数据库密码和上传目录敞开。
 
-**③ 反向代理（Nginx 在前、PHP 在后）时**，把真实 IP 传给后端：
+**3. 用了反向代理（Nginx 在前、PHP 在后）**，要把真实 IP 传给后端：
 
 ```nginx
 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -207,10 +204,10 @@ proxy_set_header Host $host;
 
 程序已经信任代理传来的 IP（`trustProxies(at: '*')`），后台的操作日志里记录的 IP 才是真实的访客 IP。
 
-### 3.5 宝塔面板完整安装流程（推荐）
+### 3.5 宝塔面板完整安装流程
 
-下面按宝塔 Linux 面板 9.x 的实际菜单写，全程不用手写 Nginx 配置文件。
-Windows 面板同理，只是路径换成 `C:\...`。
+照着宝塔 Linux 面板 9.x 的菜单做就行，不用手写 Nginx 配置文件。
+Windows 面板步骤一样，路径换成 `C:\...`。
 
 #### 第 1 步：装 PHP 8.3 和必需扩展
 
@@ -253,7 +250,7 @@ Windows 面板同理，只是路径换成 `C:\...`。
 - **文件管理**：把源码打包成 zip 上传 → 右键解压到站点根目录。
   注意解压后必须是 `composer.json`、`app/`、`public/` 直接在根目录这一层，
   不能多套一层 `woniu-laravel/` 文件夹。
-- **终端拉取**（推荐，以后 `git pull` 升级方便）：左侧 **终端**，执行
+- **终端拉取**（以后 `git pull` 更新方便）：左侧 **终端**，执行
 
 ```bash
 cd /www/wwwroot/img.example.com
@@ -284,14 +281,14 @@ mkdir -p storage/uploads storage/thumbs storage/cache storage/logs storage/sessi
 
 > 不用跑 `php artisan key:generate`，理由见 5.1 第 3 步。
 
-#### 第 5 步：设置运行目录（最容易漏的一步）
+#### 第 5 步：设置运行目录
 
 **网站 → 点站点名 → 网站目录**：
 
 1. **运行目录** 选 `/public`，保存
 2. 把 **「防跨站攻击（open_basedir）」关掉**
 
-第 2 条是宝塔部署 Laravel 最常见的坑：开着防跨站时 PHP 只能读 `public/` 目录，
+第 2 条容易被忽略：开着防跨站时 PHP 只能读 `public/` 目录，
 读不到上一级的 `vendor/` 和 `storage/`，页面直接白屏 500，日志里是
 `open_basedir restriction in effect`。关掉后由「运行目录」本身保证 Web 访问范围，
 安全性不受影响。
@@ -307,7 +304,7 @@ location / {
 ```
 
 保存。**不要**给 `/uploads/`、`/thumbs/`、`/covers/` 加 `alias` 或静态直出规则 ——
-这三个路径必须交给 PHP 做密码校验、删除/审核状态判断，见 3.4 第①条。
+这三个路径必须交给 PHP 做密码校验、删除/审核状态判断，见 3.4 第 1 点。
 
 Apache 环境不用填伪静态，`public/.htaccess` 已经带好了，确认面板允许 `.htaccess`
 覆盖（「网站目录 → 允许重写」）即可。
@@ -337,7 +334,7 @@ chmod -R 755 /www/wwwroot/img.example.com/config
 `config/` 必须可写（安装向导要写 `config/installed.php`），`storage/` 全程要写。
 **别用 777。**
 
-#### 第 9 步：配 SSL（建议）
+#### 第 9 步：配 SSL
 
 **网站 → SSL → Let's Encrypt → 申请**，签发后打开「强制 HTTPS」。
 装完记得进后台「系统设置 → 常规设置」把站点地址改成 `https://` 开头，
@@ -345,7 +342,7 @@ chmod -R 755 /www/wwwroot/img.example.com/config
 
 #### 第 10 步：跑安装向导
 
-浏览器访问 `https://img.example.com` → 自动跳转 `/install`：
+浏览器访问 `https://img.example.com`，会自动跳到 `/install`：
 
 | 字段 | 填法 |
 |---|---|
@@ -356,7 +353,7 @@ chmod -R 755 /www/wwwroot/img.example.com/config
 | 站点地址 | `https://img.example.com` |
 | 管理员账号 / 邮箱 / 密码 | 自行设置，密码至少 5 位 |
 
-点「开始安装」→ 建 23 张表、写 `config/installed.php` 和 `install.lock` → 完成。
+点「开始安装」，向导会建 23 张表、写好 `config/installed.php` 和 `install.lock`，装完就好了。
 **装完立刻用管理员账号登录后台改密码。**
 
 #### 宝塔环境常见问题
@@ -370,7 +367,7 @@ chmod -R 755 /www/wwwroot/img.example.com/config
 | 上传大图 413 Request Entity Too Large | 只改了 PHP 没改 Nginx | 第 7 步两处都要改 |
 | 上传后缩略图空白 / 报 `GD` 相关错误 | PHP 缺 `gd` 或 `fileinfo` | 软件商店 → PHP 8.3 → 安装扩展 |
 | 登录后立刻掉线、反复跳登录页 | `storage/sessions` 不可写或所有者不对 | 第 8 步重设权限与所有者 `www` |
-| 后台操作日志 IP 全是 `127.0.0.1` | 反代没传真实 IP | 按 3.4 第③条补 `X-Forwarded-For` |
+| 后台操作日志 IP 全是 `127.0.0.1` | 反代没传真实 IP | 按 3.4 第 3 点补 `X-Forwarded-For` |
 | 想重装但 `/install` 已锁 | `install.lock` 存在 | 删 `install.lock` 与 `config/installed.php` 再访问（**先备份**） |
 
 ---
@@ -411,14 +408,14 @@ chmod -R 755 /www/wwwroot/img.example.com/config
 
 | 方式 | 适合谁 | 小节 |
 |---|---|---|
-| **A. 从 GitHub 拉源码** | 想随时 `git pull` 升级、或者需要自己改代码的人 | [5.1](#51-从-github-拉取源码部署推荐) |
+| **A. 从 GitHub 拉源码** | 想随时 `git pull` 更新、或者需要自己改代码的人 | [5.1](#51-从-github-拉取源码部署) |
 | **B. 上传整包** | 只想快点装起来、不碰命令行的人 | [5.2](#52-上传整包部署) |
 
 > 两种方式**最终都要走一遍安装向导**（第 4 步往后完全一样）。
 
 ---
 
-### 5.1 从 GitHub 拉取源码部署（推荐）
+### 5.1 从 GitHub 拉取源码部署
 
 仓库地址：**<https://github.com/xiaomcm/woniu-laravel>**
 
@@ -483,9 +480,8 @@ chmod -R 775 /www/wwwroot/img.example.com/config
 也就是说，A 方式只比 B 方式多了「拉代码 + 装依赖 + 备 .env」三步，
 **安装向导的流程完全一样**。
 
-> 这套流程已在**干净克隆环境实测通过**：全新 clone → `composer install --no-dev` →
-> 建目录 → 启动 → 安装向导建库（23 张业务表 + admin 账号 + `config/installed.php`）→
-> 登录 admin/admin → 控制台 / 后台 / 用户中心全部正常打开。
+> 全新部署会建出 23 张业务表和默认管理员账号，配置写进 `config/installed.php`，
+> 装完用管理员账号登录，控制台、后台、用户中心都能打开。
 
 ---
 
@@ -530,7 +526,7 @@ config 目录可写                             通过
 | 驱动 | MySQL / MariaDB 或 SQLite |
 | 主机、端口、库名、用户名、密码 | MySQL 填这几项；选 SQLite 时留空即可 |
 | 表前缀 | 已有站点升级时必须和原来一致 |
-| 站点地址 | **不带结尾斜杠**，例如 `https://img.example.com`。这个值会写进图片链接，改了要按 7.4 处理存量数据 |
+| 站点地址 | **不带结尾斜杠**，例如 `https://img.example.com`。这个值会写进图片链接，换地址后要按第六节「换站点地址」里的两个脚本处理存量数据 |
 | 管理员昵称 | 登录用户名 |
 | 管理员邮箱 | 登录也可以用邮箱 |
 | 管理员密码 | **至少 5 位** |
@@ -604,12 +600,12 @@ php tools/fix_thumbnails.php
 
 ## 八、从 GitHub 更新到最新版
 
-用 5.1 方式（`git clone`）装的站，升级就是一条 `git pull`：
+用 5.1 方式（`git clone`）装的站，更新就是一条 `git pull`：
 
 ```bash
 cd /www/wwwroot/img.example.com
 
-# 1) 先备份数据库和配置（升级前必做）
+# 1) 先备份数据库和配置
 cp storage/database.sqlite /tmp/woniu-backup-$(date +%F).sqlite
 cp config/installed.php /tmp/woniu-installed-$(date +%F).php
 
@@ -629,14 +625,14 @@ php artisan route:clear
 |---|---|
 | `app/` `resources/` `public/assets/` `routes/` `config/defaults.php` … | `config/installed.php`、`storage/`（数据库、图片、日志、会话） |
 
-> **`.gitignore` 已经把 `config/installed.php`、`storage/database.sqlite`、
-> `storage/uploads/`、`storage/thumbs/` 全部排除在版本库之外**，
-> 所以 `git pull` 不会碰你的站点配置和用户数据 —— 这一点是设计时就保证的。
+> `.gitignore` 已经把 `config/installed.php`、`storage/database.sqlite`、
+> `storage/uploads/`、`storage/thumbs/` 排除在版本库之外，
+> 所以 `git pull` 不会碰站点配置和用户数据。
 
-### 8.1 升级后建议做一次自检
+### 8.1 更新后跑一遍自检
 
 ```bash
-php artisan test                   # 契约测试全绿
+php artisan test                   # 跑一遍测试
 php artisan config:clear && php artisan view:clear
 ```
 
