@@ -1,18 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="蜗牛图床 网站图标">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="蜗牛图床 实心扁平标志">
   <defs>
-    <linearGradient id="woniu" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#7d8cff"/>
-      <stop offset="1" stop-color="#a277ff"/>
-    </linearGradient>
+    <mask id="shellCut">
+      <circle cx="205" cy="214" r="116" fill="#ffffff"/>
+      <path d="M205 214 C205 194 236 189 243 212 C251 241 220 264 191 249 C153 230 167 177 216 171 C272 164 295 246 241 294"
+            fill="none" stroke="#000000" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+    </mask>
   </defs>
-  <rect width="512" height="512" rx="116" fill="url(#woniu)"/>
-  <path d="M243 226 C243 202 274 194 288 214 C307 243 277 282 238 278 C186 273 170 211 208 177 C253 137 326 163 338 231 C352 313 285 373 201 363"
-        fill="none" stroke="#ffffff" stroke-width="38" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M132 372 C180 352 238 372 292 360 C338 350 372 328 386 296"
-        fill="none" stroke="#ffffff" stroke-width="36" stroke-linecap="round"/>
-  <circle cx="388" cy="290" r="20" fill="#ffffff"/>
-  <path d="M388 272 C394 246 405 224 418 208" fill="none" stroke="#ffffff" stroke-width="20" stroke-linecap="round"/>
-  <path d="M404 288 C424 272 440 260 452 254" fill="none" stroke="#ffffff" stroke-width="20" stroke-linecap="round"/>
-  <circle cx="420" cy="204" r="14" fill="#ffffff"/>
-  <circle cx="456" cy="252" r="14" fill="#ffffff"/>
+  <path d="M96 356 C150 341 250 356 330 340 C381 330 406 309 413 273 C417 251 405 242 392 251 C384 300 349 316 299 321 C219 330 149 318 104 331 C90 335 87 351 96 356 Z"
+        fill="#6d5cf0"/>
+  <circle cx="205" cy="214" r="116" fill="#6d5cf0" mask="url(#shellCut)"/>
+  <path d="M399 258 C405 228 415 205 428 187" fill="none" stroke="#6d5cf0" stroke-width="15" stroke-linecap="round"/>
+  <path d="M408 264 C426 244 440 228 455 218" fill="none" stroke="#6d5cf0" stroke-width="15" stroke-linecap="round"/>
+  <circle cx="430" cy="183" r="13" fill="#6d5cf0"/>
+  <circle cx="458" cy="214" r="13" fill="#6d5cf0"/>
 </svg>
