@@ -529,17 +529,43 @@ class ImageController extends Controller
             abort(404);
         }
 
-        $ops = [
-            'width'   => Request::int('w', 0),
-            'height'  => Request::int('h', 0),
-            'fit'     => (string) Request::input('fit', 'cover'),
-            'quality' => Request::int('q', 0),
-            'format'  => (string) Request::input('f', ''),
-            'filter'  => (string) Request::input('filter', ''),
-            'rotate'  => Request::int('rotate', 0),
-            'flip'    => (string) Request::input('flip', ''),
-        ];
-        $ops = array_filter($ops, static fn ($v) => $v !== '' && $v !== 0);
+        // 只有真传了参数才处理，否则原样输出。
+        // 注意 fit 不能无条件取默认值：它默认是 cover，一旦进了 $ops，
+        // 下面的「无参数直接吐原文件」就永远走不到，所有直链都会被重新压缩。
+        $width  = Request::int('w', 0);
+        $height = Request::int('h', 0);
+        $quality = Request::int('q', 0);
+        $format = trim((string) Request::input('f', ''));
+        $filter = trim((string) Request::input('filter', ''));
+        $rotate = Request::int('rotate', 0);
+        $flip   = trim((string) Request::input('flip', ''));
+
+        $ops = [];
+        if ($width > 0) {
+            $ops['width'] = $width;
+        }
+        if ($height > 0) {
+            $ops['height'] = $height;
+        }
+        if ($width > 0 || $height > 0) {
+            // 只有要缩放时 fit 才有意义
+            $ops['fit'] = (string) Request::input('fit', 'cover');
+        }
+        if ($quality > 0) {
+            $ops['quality'] = $quality;
+        }
+        if ($format !== '') {
+            $ops['format'] = $format;
+        }
+        if ($filter !== '') {
+            $ops['filter'] = $filter;
+        }
+        if ($rotate !== 0) {
+            $ops['rotate'] = $rotate;
+        }
+        if ($flip !== '') {
+            $ops['flip'] = $flip;
+        }
 
         if ($ops === []) {
             Response::file($file);
