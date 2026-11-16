@@ -191,9 +191,9 @@ class SchemaContractTest extends TestCase
     {
         // MySQL 分支不能因为重构而丢失，否则 MySQL 站点装不上
         $statements = (function () {
-            // 反射取私有的 statements 方法
+            // 反射取私有的 statements 方法。PHP 8.1 起私有方法反射即可直接调用，
+            // 不需要 setAccessible()（那个方法 PHP 8.5 起被标记弃用）
             $ref = new \ReflectionMethod(Schema::class, 'statements');
-            $ref->setAccessible(true);
             return $ref->invoke(null, 'mysql', '');
         })();
 
