@@ -18,6 +18,32 @@ use Tests\DatabaseTestCase;
  */
 class ImageRawOutputContractTest extends DatabaseTestCase
 {
+    /** 测试过程中落到真实 uploads 目录的文件，跑完要清掉，别留脏数据 */
+    private array $fixtures = [];
+
+    protected function tearDown(): void
+    {
+        $root = dirname(__DIR__, 2) . '/storage/uploads';
+        foreach ($this->fixtures as $file) {
+            if (is_file($file)) {
+                @unlink($file);
+            }
+            // 顺带把空掉的日期目录收掉（只收到 uploads 这一层为止）
+            $dir = dirname($file);
+            while ($dir !== $root && str_starts_with($dir, $root) && is_dir($dir)) {
+                $items = @scandir($dir);
+                if ($items === false || count($items) > 2) {
+                    break;
+                }
+                @rmdir($dir);
+                $dir = dirname($dir);
+            }
+        }
+        $this->fixtures = [];
+
+        parent::tearDown();
+    }
+
     private function writeFixture(string $pathname, string $bytes): string
     {
         $root = dirname(__DIR__, 2) . '/storage/uploads';
@@ -27,6 +53,7 @@ class ImageRawOutputContractTest extends DatabaseTestCase
             @mkdir($dir, 0777, true);
         }
         file_put_contents($file, $bytes);
+        $this->fixtures[] = $file;
 
         return $file;
     }
