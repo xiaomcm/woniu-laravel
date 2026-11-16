@@ -53,10 +53,15 @@ $percent = $capacity > 0 ? min(100, round($usedBytes / $capacity * 100, 1)) : 0;
     })();
     </script>
     <aside class="sidebar">
-        <a class="brand" href="{{ url('dashboard') }}">
-            <span class="brand-mark">W</span>
-            <span class="brand-name">{{ $siteName }}</span>
-        </a>
+        <div class="sidebar-head">
+            <a class="brand" href="{{ url('dashboard') }}">
+                <span class="brand-mark">W</span>
+                <span class="brand-name">{{ $siteName }}</span>
+            </a>
+            <button class="sidebar-close" type="button" data-sidebar-close aria-label="关闭菜单" title="关闭菜单">
+                <svg class="ic"><use href="#i-close"/></svg>
+            </button>
+        </div>
 
         <div class="nav-label">图床</div>
         <a class="nav-item {!! $isUpload ? 'active' : '' !!}" href="{{ url('upload') }}">
@@ -105,6 +110,9 @@ $percent = $capacity > 0 ? min(100, round($usedBytes / $capacity * 100, 1)) : 0;
             @endif
         </div>
     </aside>
+
+    <!-- 窄屏抽屉遮罩：点它关闭侧栏 -->
+    <div class="nav-backdrop" data-nav-backdrop></div>
 
     <div class="main">
         <header class="topbar">

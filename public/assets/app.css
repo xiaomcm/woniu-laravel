@@ -80,7 +80,17 @@ p { margin: 0; }
     padding: 18px 14px 14px; gap: 4px; z-index: 40;
 }
 
+.sidebar-head { position: relative; }
 .brand { display: flex; align-items: center; gap: 10px; padding: 4px 10px 16px; }
+/* 窄屏抽屉的关闭按钮：贴在侧栏头部右上角，宽屏隐藏 */
+.sidebar-close {
+    position: absolute; top: 4px; right: 4px;
+    align-items: center; justify-content: center;
+    width: 30px; height: 30px; border-radius: 9px;
+    color: var(--muted); background: transparent; border: none; cursor: pointer;
+}
+.sidebar-close:hover { background: var(--panel-2); color: var(--text); }
+.sidebar-close .ic { width: 18px; height: 18px; }
 .brand-mark {
     width: 32px; height: 32px; border-radius: 9px; flex: none;
     background: linear-gradient(135deg, #5b7cfa, #7c5cff);
@@ -568,6 +578,9 @@ pre.code-block code {
 
 /* 侧栏收起按钮：桌面端收成图标轨道，窄屏则当抽屉开关用 */
 .menu-btn { display: inline-flex; }
+/* 抽屉遮罩与侧栏关闭按钮：只在窄屏抽屉态出现，宽屏一律不显示 */
+.nav-backdrop { display: none; }
+.sidebar-close { display: none; }
 
 /* 折叠态：248px → 68px，只留图标，悬停出文字浮层 */
 .sidebar {
@@ -635,21 +648,33 @@ pre.code-block code {
         position: fixed; left: 0; top: 0; bottom: 0; height: 100vh;
         transform: translateX(-100%); transition: transform .22s ease;
         box-shadow: 0 0 40px rgba(0, 0, 0, .2);
+        z-index: 60;
     }
     .sidebar.open { transform: none; }
+    /* 抽屉打开时盖一层半透明遮罩：点它就能关掉侧栏，不用去够被盖住的汉堡按钮 */
+    .nav-backdrop {
+        position: fixed; inset: 0; z-index: 50;
+        background: rgba(0, 0, 0, .45);
+        opacity: 0; visibility: hidden; transition: opacity .22s ease, visibility .22s;
+    }
+    .nav-backdrop.show { opacity: 1; visibility: visible; }
+    /* 抽屉里的关闭按钮，右上角 */
+    .sidebar-close { display: inline-flex; }
     .menu-btn { display: inline-flex; }
     .content { padding: 16px 14px 90px; overflow-x: hidden; }
     .topbar { padding: 0 14px; gap: 8px; }
     .topbar-title { max-width: 42vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .topbar .btn { padding: 0 10px; }
 
-    
-    .toolbar { flex-direction: column; align-items: stretch; }
-    .toolbar form { width: 100%; display: flex; flex-wrap: wrap; gap: 8px; }
-    .toolbar form .input,
-    .toolbar form .select { flex: 1 1 44%; width: auto !important; min-width: 0; }
-    .toolbar form .btn { flex: 1 1 100%; justify-content: center; }
+    /* 筛选栏：搜索框独占一行，状态+筛选按钮并排一行，切换按钮并排一行 —— 不再五段竖着堆 */
+    .toolbar { flex-direction: column; align-items: stretch; gap: 8px; }
+    .toolbar form { width: 100%; display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+    .toolbar form .input { grid-column: 1 / -1; width: 100% !important; }
+    .toolbar form .select { grid-column: 1; width: 100% !important; min-width: 0; }
+    .toolbar form .btn { grid-column: 2; justify-content: center; align-self: end; }
     .toolbar > .btn { justify-content: center; }
+    /* 末尾成对的切换按钮（正常/回收站之类）分两列并排 */
+    .toolbar > .btn:not(:first-of-type) { flex: 1 1 0; }
     .toolbar .spacer { display: none; }
 
     .image-grid { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 10px; }

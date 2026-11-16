@@ -89,7 +89,18 @@
         if (sidebarToggle) {
             e.preventDefault();
             toggleSidebar();
+            return;
         }
+        // 点遮罩或侧栏里的关闭按钮都能收起抽屉
+        if (e.target.closest('[data-nav-backdrop]') || e.target.closest('[data-sidebar-close]')) {
+            e.preventDefault();
+            closeSidebar();
+        }
+    });
+
+    // Esc 也能关抽屉
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') { closeSidebar(); }
     });
 
     /* 侧栏两种形态：宽屏收成 68px 图标轨道，窄屏当抽屉开关用
@@ -126,7 +137,23 @@
             applySidebar(next);
             return;
         }
+        // 窄屏抽屉：同步遮罩显示，打开时锁页面滚动，保证点遮罩能关掉
         sidebar.classList.toggle('open');
+        syncNavBackdrop(sidebar.classList.contains('open'));
+    }
+
+    function syncNavBackdrop(open) {
+        const backdrop = document.querySelector('[data-nav-backdrop]');
+        if (backdrop) { backdrop.classList.toggle('show', open); }
+        document.body.style.overflow = open ? 'hidden' : '';
+    }
+
+    function closeSidebar() {
+        const sidebar = document.querySelector('.sidebar');
+        if (sidebar && sidebar.classList.contains('open')) {
+            sidebar.classList.remove('open');
+            syncNavBackdrop(false);
+        }
     }
 
     function initSidebar() {
@@ -181,6 +208,7 @@
         // 拖窗口跨过断点时收起态失效，回到宽屏要按记忆恢复
         const onChange = function () {
             document.querySelectorAll('.sidebar').forEach(function (s) { s.classList.remove('open'); });
+            syncNavBackdrop(false);
             applySidebar(localStorage.getItem(SIDEBAR_KEY) === 'collapsed');
         };
         if (WIDE.addEventListener) {

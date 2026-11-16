@@ -43,10 +43,15 @@ $updateInfo = \App\Services\UpdateChecker::check();
     })();
     </script>
     <aside class="sidebar">
-        <a class="brand" href="{{ url('dashboard') }}" title="回到前台">
-            <span class="brand-mark" style="background:linear-gradient(135deg,#111827,#374151)">A</span>
-            <span class="brand-name">{{ $brandName }}</span>
-        </a>
+        <div class="sidebar-head">
+            <a class="brand" href="{{ url('dashboard') }}" title="回到前台">
+                <span class="brand-mark" style="background:linear-gradient(135deg,#111827,#374151)">A</span>
+                <span class="brand-name">{{ $brandName }}</span>
+            </a>
+            <button class="sidebar-close" type="button" data-sidebar-close aria-label="关闭菜单" title="关闭菜单">
+                <svg class="ic"><use href="#i-close"/></svg>
+            </button>
+        </div>
 
         <div class="nav-label">概览</div>
         <a class="nav-item {!! $cp === '/admin' ? 'active' : '' !!}" href="{{ url('admin') }}">
@@ -117,6 +122,9 @@ $updateInfo = \App\Services\UpdateChecker::check();
             <svg class="ic"><use href="#i-clock"/></svg><span>操作日志</span>
         </a>
     </aside>
+
+    <!-- 窄屏抽屉遮罩：点它关闭侧栏 -->
+    <div class="nav-backdrop" data-nav-backdrop></div>
 
     <div class="main">
         <header class="topbar">
