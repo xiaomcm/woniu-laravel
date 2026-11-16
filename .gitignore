@@ -48,6 +48,23 @@ Thumbs.db
 !/storage/tmp/.gitignore
 /storage/testing/*
 !/storage/testing/.gitignore
+# 兜底：storage 下任何位置的库文件、备份、图片都别想进版本库
+/storage/**/*.sqlite
+/storage/**/*.sqlite3
+/storage/**/*.db
+/storage/**/*.sqlite.*
+/storage/**/*.bak
+/storage/uploads/**/*.jpg
+/storage/uploads/**/*.jpeg
+/storage/uploads/**/*.png
+/storage/uploads/**/*.gif
+/storage/uploads/**/*.webp
+/storage/uploads/**/*.bmp
+/storage/thumbs/**/*.jpg
+/storage/thumbs/**/*.jpeg
+/storage/thumbs/**/*.png
+/storage/thumbs/**/*.gif
+/storage/thumbs/**/*.webp
 # public 下的软链与直传目录
 /public/uploads
 /public/thumbs
