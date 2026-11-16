@@ -134,6 +134,7 @@ if (!preg_match('/^\d+\.\d+\.\d+$/', $version)) {
 
 $dryRun   = flag('dry-run');
 $skipTest = flag('skip-tests');
+$resume   = flag('resume');   // 发版中途断了（比如推送失败）时，从推送这步接着做
 $notes    = (string) (argOf('notes') ?? '');
 $token    = (string) (getenv('GH_TOKEN') ?: '');
 $assetName = "woniu-laravel-v{$version}.zip";
@@ -150,10 +151,18 @@ if (!preg_match("/'version'\s*=>\s*'([^']+)'/", $defaults, $m)) {
 $current = $m[1];
 $expected = nextVersion($current);
 
-if ($version !== $expected) {
-    fail("版本号只能往上一格走：当前 {$current}，下一个应该是 {$expected}（2.0.9 之后跳 3.0.0）");
+if ($resume) {
+    // 续发：版本号已经在上一轮改过了，只要求目标号跟当前一致
+    if ($version !== $current) {
+        fail("续发模式下版本号要跟当前一致（当前 {$current}），不能是 {$version}");
+    }
+    ok("续发模式：版本号已是 {$version}，跳过改号与提交");
+} else {
+    if ($version !== $expected) {
+        fail("版本号只能往上一格走：当前 {$current}，下一个应该是 {$expected}（2.0.9 之后跳 3.0.0）");
+    }
+    ok("版本号 {$current} → {$version}");
 }
-ok("版本号 {$current} → {$version}");
 
 // 工作区必须干净，避免把半截改动打进包
 [$code, $status] = gitIn($root, 'status --porcelain');
@@ -181,14 +190,16 @@ if (!$dryRun && $token === '') {
 }
 
 // ──────────────────────── 1. 改版本号 ────────────────────────
-$newDefaults = preg_replace("/'version'\s*=>\s*'[^']+'/", "'version'   => '{$version}'", $defaults, 1);
-if ($newDefaults === null) {
-    fail("替换版本号失败");
+if (!$resume) {
+    $newDefaults = preg_replace("/'version'\s*=>\s*'[^']+'/", "'version'   => '{$version}'", $defaults, 1);
+    if ($newDefaults === null) {
+        fail("替换版本号失败");
+    }
+    if (!$dryRun) {
+        file_put_contents($defaultsFile, $newDefaults);
+    }
+    ok("config/defaults.php 版本号改为 {$version}");
 }
-if (!$dryRun) {
-    file_put_contents($defaultsFile, $newDefaults);
-}
-ok("config/defaults.php 版本号改为 {$version}");
 
 // ──────────────────────── 2. 写 CHANGELOG ────────────────────────
 $changelogFile = $root . '/CHANGELOG.md';
@@ -208,10 +219,10 @@ if ($pos === false) {
 } else {
     $newChangelog = substr($changelog, 0, $pos + 1) . $section . substr($changelog, $pos + 1);
 }
-if (!$dryRun) {
+if (!$dryRun && !$resume) {
     file_put_contents($changelogFile, $newChangelog);
 }
-ok("CHANGELOG.md 加了 v{$version} 一节");
+ok($resume ? "CHANGELOG.md 已有 v{$version} 一节" : "CHANGELOG.md 加了 v{$version} 一节");
 
 // ──────────────────────── 3. 跑测试 ────────────────────────
 $php = PHP_BINARY;
@@ -318,17 +329,30 @@ if ($dryRun) {
     exit(0);
 }
 
-[$code, $out] = gitIn($root, 'add config/defaults.php CHANGELOG.md');
-if ($code !== 0) {
-    fail("git add 失败: {$out}");
+if (!$resume) {
+    [$code, $out] = gitIn($root, 'add config/defaults.php CHANGELOG.md');
+    if ($code !== 0) {
+        fail("git add 失败: {$out}");
+    }
+    [$code, $out] = gitIn($root, 'commit -m ' . escapeshellarg("release: v{$version}"));
+    if ($code !== 0) {
+        fail("git commit 失败: {$out}");
+    }
+    ok("已提交");
+} else {
+    ok("跳过提交（上一轮已提交 release: v{$version}）");
 }
-[$code, $out] = gitIn($root, 'commit -m ' . escapeshellarg("release: v{$version}"));
-if ($code !== 0) {
-    fail("git commit 失败: {$out}");
-}
-ok("已提交");
 
-[$code, $out] = gitIn($root, 'push origin main');
+// 推送要带上 token 认证头：这台机器没有缓存 git 凭据，普通的 `git push`
+// 会弹登录框（无头环境直接失败 "could not read Username"）。仓库地址保持干净，
+// 认证只在这一条命令里临时带，不写进 .git/config。
+$auth = base64_encode('x-access-token:' . $token);
+$pushCmd = sprintf(
+    '-c http.extraHeader="Authorization: Basic %s" push origin %s',
+    $auth,
+    escapeshellarg($branch)
+);
+[$code, $out] = gitIn($root, $pushCmd);
 if ($code !== 0) {
     fail("推送失败: {$out}");
 }
