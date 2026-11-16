@@ -380,11 +380,16 @@ class Image extends BaseModel
         // url 兜底：这一列存的是上传时由存储驱动写入的绝对地址，正常都有值。
         // 但早期版本导入的示例图是空的，页面直接取 $image['url'] 就会渲染成
         // <img src="">（浏览器里是裂图），这里按 pathname 补一个能用的地址。
-        if (trim((string) ($row['url'] ?? '')) === '') {
+        $urlRaw = trim((string) ($row['url'] ?? ''));
+        if ($urlRaw === '') {
             $pathname = ltrim((string) ($row['pathname'] ?? ''), '/');
             if ($pathname !== '') {
-                $row['url'] = url('uploads/' . $pathname);
+                $row['url'] = image_public_url($pathname);
             }
+        } else {
+            // 老数据里存的是 .../uploads/2025/...，对外统一去掉 uploads 这一段。
+            // 老地址仍然能开（serve 路由两套都认），只是不再往出给。
+            $row['url'] = str_replace('/uploads/', '/', $urlRaw);
         }
         return $row;
     }

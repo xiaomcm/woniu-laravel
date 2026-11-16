@@ -243,3 +243,9 @@ Route::get('/thumbs/{path}', [ImageController::class, 'thumb'])->where('path', '
 Route::get('/covers/{path}', [ImageController::class, 'cover'])->where('path', '.+');
 // 下架/拒绝/删除图片的占位图：纯白块，比例跟原图一致，避免列表高度错位
 Route::get('/blank/{spec}', [ImageController::class, 'blank'])->where('spec', '.+');
+
+// 图片直链短地址：/2025/09/07/xxx.jpg，不带 uploads 前缀。
+// 老地址 /uploads/2025/... 继续可用，已经发出去的链接不会失效。
+// 只匹配「4位年/2位月/2位日/文件名」这个形状，不会吃掉别的路由，所以放最后一条。
+Route::get('/{path}', [ImageController::class, 'serve'])
+    ->where('path', '\d{4}/\d{2}/\d{2}/[A-Za-z0-9._\-]+');

@@ -274,6 +274,30 @@ if (!function_exists('str_limit')) {
     }
 }
 
+if (!function_exists('image_public_url')) {
+    /**
+     * 图片直链，对外展示用的那种。
+     *
+     * 不带 uploads 前缀：给出去是 https://站点/2025/09/07/xxx.jpg，
+     * 而不是 https://站点/uploads/2025/09/07/xxx.jpg。
+     * 老链接照样能开，只是新生成的地址不再往出给 uploads 这一段。
+     *
+     * 所有拼图片地址的地方都走这里，别各写各的，否则改一处漏三处。
+     */
+    function image_public_url(string $pathname): string
+    {
+        $pathname = ltrim(str_replace('\\', '/', trim($pathname)), '/');
+        if ($pathname === '') {
+            return '';
+        }
+        // 传进来已经是完整地址就不再套一层
+        if (preg_match('#^https?://#i', $pathname) === 1) {
+            return $pathname;
+        }
+        return url($pathname);
+    }
+}
+
 if (!function_exists('image_thumb')) {
     /**
      * 前台缩略图地址：未过审/已下线给空白占位，加密图照常给地址

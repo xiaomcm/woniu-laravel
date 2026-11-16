@@ -20,8 +20,11 @@ class Links
         if ($url === '') {
             $pathname = ltrim((string) ($image['pathname'] ?? ''), '/');
             if ($pathname !== '') {
-                $url = url('uploads/' . $pathname);
+                $url = image_public_url($pathname);
             }
+        } else {
+            // 对外不给 uploads 这一段
+            $url = str_replace('/uploads/', '/', $url);
         }
         $name = (string) ($image['name'] ?? 'image');
         $thumb = trim((string) ($image['thumb_url'] ?? ''));

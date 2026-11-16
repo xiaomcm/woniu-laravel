@@ -41,7 +41,8 @@ class LocalStorage extends Driver
         if ($domain !== '') {
             return $domain . '/' . ltrim($path, '/');
         }
-        return url('uploads/' . ltrim($path, '/'));
+        // 不带 uploads 前缀，对外给的是短地址
+        return image_public_url($path);
     }
 
     public function test(): array

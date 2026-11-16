@@ -157,7 +157,13 @@ $copyRows = [
                     @endforeach
                     <?php
                     $baseUrl = (string) $image['url'];
-                    $localServed = $baseUrl !== '' && strpos($baseUrl, '/uploads/') !== false;
+                    // 判断是不是本站自己在发图（决定要不要给缩放变体）。
+                    // 地址已经不带 uploads 了，所以看域名是不是同一个；
+                    // 老数据里可能还留着 /uploads/ 的地址，那种也算本站。
+                    $appHost = (string) parse_url(url('/'), PHP_URL_HOST);
+                    $imgHost = $baseUrl !== '' ? (string) parse_url($baseUrl, PHP_URL_HOST) : '';
+                    $localServed = $baseUrl !== ''
+                        && ($imgHost === $appHost || strpos($baseUrl, '/uploads/') !== false);
                     ?>
                     @if ($localServed)
                         <div class="copy-row" style="flex-wrap:wrap;gap:8px">

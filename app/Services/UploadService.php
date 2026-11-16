@@ -274,9 +274,9 @@ class UploadService
     {
         $url = (string) ($image['url'] ?? '');
         if ($url !== '' && preg_match('#^https?://#i', $url)) {
-            return $url;
+            return str_replace('/uploads/', '/', $url);
         }
-        return url('uploads/' . $image['pathname']);
+        return image_public_url((string) $image['pathname']);
     }
 
     private function resolveStorage(): Driver
