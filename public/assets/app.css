@@ -783,18 +783,13 @@ pre.code-block code {
     padding: 26px 20px 34px; font-size: 12.5px; color: var(--muted);
 }
 
-/* 全站页脚署名行：用户中心、后台、登录注册、分享页统一走这一套 */
+/* 全站页脚署名行：只显示后台填了的版权文字和备案号 */
 .app-foot, .auth-foot-brand, .blank-foot {
     display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px;
     font-size: 12.5px; color: var(--muted); text-align: center;
 }
-/* 页脚版本号：等宽小字，跟版权同一行但不抢视线 */
-.app-foot .ver, .auth-foot-brand .ver, .blank-foot .ver {
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 12px; letter-spacing: .2px; opacity: .9;
-}
 
-/* 页脚更新提示：有新版时才出现，跟版本号同排，醒目但不刺眼 */
+/* 后台专属：发现新版本提示，有新版时才出现，醒目但不刺眼 */
 .fm-update {
     color: var(--primary); font-weight: 600; text-decoration: none;
 }
@@ -811,23 +806,15 @@ pre.code-block code {
 .blank-foot { padding: 24px 20px 30px; }
 .site-wrap { width: 100%; }
 
-/* 窄屏页脚：版权信息段数多，手机上点号连成一长串会折成好几行、左右还不对齐。
-   把重复的「Powered by 站点名」和独立页面链接收起（站点名在 © 段已有、页面链接在上方导航里），
-   备案号独占一行居中，其余保持一行。只在窄屏生效，桌面端内容一个不少。 */
+/* 窄屏页脚：版权和备案两段在手机上居中收敛，更新提示单独占一行。 */
 @media (max-width: 640px) {
     .site-foot, .app-foot, .auth-foot-brand, .blank-foot {
         flex-wrap: wrap; justify-content: center;
         gap: 3px 0; font-size: 11.5px; line-height: 1.7;
         padding-left: 14px; padding-right: 14px;
     }
-    .fm-page-link, .fm-page-dot, .fm-powered, .fm-powered-dot { display: none; }
-    .fm-icp { flex-basis: 100%; text-align: center; }
-    .fm-icp-dot { display: none; }
-    /* 更新提示比备案号更该被看到：单独占一行，前面的点号收起 */
-    .fm-update { flex-basis: 100%; text-align: center; }
-    .fm-update-dot { display: none; }
     .site-foot .dot, .app-foot .dot, .auth-foot-brand .dot, .blank-foot .dot { margin: 0 4px; }
-    .site-foot .ver, .app-foot .ver, .auth-foot-brand .ver, .blank-foot .ver { font-size: 11.5px; }
+    .fm-update { flex-basis: 100%; text-align: center; }
 }
 
 .explore-head { display: flex; align-items: flex-end; gap: 20px; flex-wrap: wrap; margin-bottom: 18px; }

@@ -154,7 +154,7 @@ if ($footerPages === []) {
         </div>
     </div>
     <div class="lx-foot-meta">
-        @include('partials.footer_meta', ['footerPages' => []])
+        @include('partials.footer_meta')
     </div>
 </footer>
 

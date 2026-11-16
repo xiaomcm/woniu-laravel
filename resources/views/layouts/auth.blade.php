@@ -58,7 +58,7 @@ $seoDesc = $seoDesc !== '' ? $seoDesc : (string) ($siteSettings['site_descriptio
             {!! $content !!}
         </div>
         <footer class="auth-foot-brand">
-            @include('partials.footer_meta', ['footerPages' => []])
+            @include('partials.footer_meta')
         </footer>
     </div>
 </div>

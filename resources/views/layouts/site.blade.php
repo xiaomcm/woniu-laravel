@@ -15,6 +15,7 @@ $logo = (string) ($siteSettings['site_logo'] ?? '');
 $shopOn = (string) ($siteSettings['shop_enabled'] ?? '0') === '1';
 $ticketOn = (string) ($siteSettings['ticket_enabled'] ?? '1') === '1';
 
+// 页脚独立页面：后台勾了「显示在页脚」的（隐私、版权等）
 $footerPages = [];
 try {
     $footerPages = \App\Models\Page::footerPages();

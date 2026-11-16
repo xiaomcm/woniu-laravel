@@ -182,7 +182,7 @@ $percent = $capacity > 0 ? min(100, round($usedBytes / $capacity * 100, 1)) : 0;
             {!! $content !!}        </div>
 
         <footer class="app-foot">
-            @include('partials.footer_meta', ['footerPages' => []])
+            @include('partials.footer_meta')
         </footer>
     </div>
 </div>

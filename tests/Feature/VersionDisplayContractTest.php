@@ -7,12 +7,8 @@ use Tests\TestCase;
 /**
  * 版本号显示契约测试。
  *
- * 用户要求：后台版本号统一在底部版权处显示（侧栏那行重复的已删）。
- *
- * 锁三件事：
- *   1. 页脚不再硬编码版本号，而是读 config 的 app.version
- *   2. 后台底部引入 footer_meta、侧栏不再有版本号，并接上更新提示
- *   3. config/defaults.php 里的 version 格式是 x.y.z（发版脚本要解析它）
+ * 用户最新要求：页脚只显示后台设置的版权和备案，版本号不再出现在页脚。
+ * config 里的版本号仍要保留 x.y.z 格式 —— 发版脚本靠它递增。
  */
 class VersionDisplayContractTest extends TestCase
 {
@@ -23,51 +19,35 @@ class VersionDisplayContractTest extends TestCase
         return (string) file_get_contents($file);
     }
 
-    public function test_footer_reads_version_from_config(): void
+    public function test_footer_does_not_show_version(): void
     {
         $code = $this->viewFile('partials/footer_meta.blade.php');
 
-        $this->assertStringContainsString(
+        // 页脚只放后台设置的版权和备案，不再读版本号、不再输出版本号段
+        $this->assertStringNotContainsString(
             'app.version',
             $code,
-            '页脚版本号应该读配置里的 app.version，不要写死在模板里'
+            '页脚不该再读版本号，用户要求底部只留版权和备案'
         );
-        $this->assertStringContainsString('ver', $code, '页脚没有版本号的那一段');
+        $this->assertStringNotContainsString('class="ver"', $code, '页脚不该再有版本号那一段');
     }
 
-    public function test_footer_no_hardcoded_version(): void
+    public function test_admin_update_hint_is_outside_footer_partial(): void
     {
-        $code = $this->viewFile('partials/footer_meta.blade.php');
+        $admin = $this->viewFile('layouts/admin.blade.php');
+        $footer = $this->viewFile('partials/footer_meta.blade.php');
 
-        // 老写法是 $__fmVer = '2.0'，写死版本号会让页脚永远显示旧版
-        $this->assertDoesNotMatchRegularExpression(
-            "/\\\$__fmVer\s*=\s*'[0-9]/",
-            $code,
-            '页脚版本号又被写死了，应该读配置'
-        );
-    }
-
-    public function test_admin_shows_version_in_footer_not_sidebar(): void
-    {
-        $code = $this->viewFile('layouts/admin.blade.php');
-
-        // 版本号统一走底部版权（footer_meta），侧栏那行重复的已删掉
+        // 新版本提示是后台专属，写在 admin 布局里
+        $this->assertStringContainsString('UpdateChecker', $admin, '后台应该接上新版本检查');
+        $this->assertStringContainsString('fm-update', $admin, '后台应该有更新提示那一段');
+        // 前台共用的 footer_meta 里绝不能有更新提示，否则前台也会显示
         $this->assertStringNotContainsString(
-            'sidebar-ver',
-            $code,
-            '后台侧栏不该再有版本号，统一到底部版权处显示'
+            'fm-update',
+            $footer,
+            '更新提示不能放进全站共用的页脚片段，只能留在管理后台'
         );
-        $this->assertStringContainsString(
-            "include('partials.footer_meta'",
-            $code,
-            '后台底部没有引入统一的版权行（版本号在那里显示）'
-        );
-        // 版本号从配置读这条仍由 footer_meta 契约保证，这里只确认后台接了更新提示数据
-        $this->assertStringContainsString(
-            'UpdateChecker',
-            $code,
-            '后台应该在底部版权处接上新版本提示'
-        );
+        // 后台侧栏版本号那行早删了
+        $this->assertStringNotContainsString('sidebar-ver', $admin, '后台侧栏不该有版本号');
     }
 
     public function test_defaults_version_is_semver(): void

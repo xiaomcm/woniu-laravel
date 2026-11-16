@@ -12,7 +12,7 @@ $siteName = (string) ($siteSettings['site_name'] ?? '蜗牛图床');
 $adminTitle = trim((string) ($siteSettings['admin_title'] ?? ''));
 $brandName = $adminTitle !== '' ? $adminTitle : $siteName . ' 后台';
 // 新版本提示：只读 GitHub 版本号并缓存，查不到或已是最新就静默。
-// 只在后台布局算一次，传给下面的 footer_meta，前台页面不做这个检查。
+// 只在后台布局算一次，前台页面不做这个检查、也不会显示提示。
 $updateInfo = \App\Services\UpdateChecker::check();
 ?>
 <!DOCTYPE html>
@@ -168,7 +168,10 @@ $updateInfo = \App\Services\UpdateChecker::check();
             {!! $content !!}        </div>
 
         <footer class="app-foot">
-            @include('partials.footer_meta', ['footerPages' => [], 'updateInfo' => $updateInfo])
+            @if (!empty($updateInfo['has_update']))
+                <a class="fm-update" href="{{ (string) ($updateInfo['url'] ?? '') }}" target="_blank" rel="noopener" title="点开查看 GitHub 新版本">发现新版本 v{{ (string) ($updateInfo['latest'] ?? '') }}</a>
+            @endif
+            @include('partials.footer_meta')
         </footer>
     </div>
 </div>

@@ -35,7 +35,7 @@ $siteName = (string) ($siteSettings['site_name'] ?? '蜗牛图床');
     {!! $content !!}</div>
 
 <footer class="blank-foot">
-    @include('partials.footer_meta', ['footerPages' => []])
+    @include('partials.footer_meta')
 </footer>
 @include('partials.notice_popup')
 <script src="{{ asset('app.js') }}"></script>

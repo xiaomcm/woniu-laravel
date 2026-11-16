@@ -50,11 +50,17 @@ class UpdateCheckerContractTest extends TestCase
         $this->assertStringContainsString('environment(\'testing\')', $code);
     }
 
-    public function test_footer_shows_update_hint_when_present(): void
+    public function test_update_hint_is_only_in_admin_layout(): void
     {
-        $code = (string) file_get_contents(dirname(__DIR__, 2) . '/resources/views/partials/footer_meta.blade.php');
-        $this->assertStringContainsString('fm-update', $code);
-        $this->assertStringContainsString("\$updateInfo ?? []", $code);
-        $this->assertStringContainsString("__fmUpdate['has_update']", $code);
+        $root = dirname(__DIR__, 2);
+        $admin = (string) file_get_contents($root . '/resources/views/layouts/admin.blade.php');
+        $footer = (string) file_get_contents($root . '/resources/views/partials/footer_meta.blade.php');
+
+        // 提示只在后台布局渲染，有新版才显示
+        $this->assertStringContainsString("\$updateInfo['has_update']", $admin);
+        $this->assertStringContainsString('fm-update', $admin);
+        // 全站共用的页脚片段里不能有提示，否则前台也会出现
+        $this->assertStringNotContainsString('fm-update', $footer);
+        $this->assertStringNotContainsString('updateInfo', $footer);
     }
 }
