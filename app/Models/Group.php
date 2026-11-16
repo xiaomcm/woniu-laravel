@@ -156,21 +156,6 @@ class Group extends BaseModel
         );
     }
 
-    public static function syncStorages(int $groupId, array $storageIds): void
-    {
-        // 中间表没有 Eloquent 模型，保留原生 SQL
-        DB::query('DELETE FROM ' . DB::table('group_storage') . ' WHERE group_id = :g', ['g' => $groupId]);
-        foreach (array_unique(array_map('intval', $storageIds)) as $sid) {
-            if ($sid <= 0) {
-                continue;
-            }
-            try {
-                DB::insert('group_storage', ['group_id' => $groupId, 'storage_id' => $sid]);
-            } catch (\Throwable $e) {
-            }
-        }
-    }
-
     public static function storageAllowed(?array $group, int $storageId): bool
     {
         if ($group === null || $storageId <= 0) {

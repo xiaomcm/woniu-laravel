@@ -39,18 +39,6 @@ class UploadService
         }
     }
 
-    public function setAlbumId(?int $albumId): void
-    {
-        $this->albumId = $albumId !== null && $albumId > 0 ? $albumId : null;
-    }
-
-    public function setStorageId(?int $storageId): void
-    {
-        $this->storageId = $storageId !== null && $storageId > 0 ? $storageId : null;
-    }
-
-
-
     public function upload(array $file): array
     {
         $error = (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE);

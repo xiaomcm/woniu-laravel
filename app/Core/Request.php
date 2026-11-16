@@ -53,11 +53,6 @@ class Request
         return $path === '' ? '/' : '/' . $path;
     }
 
-    public static function isPost(): bool
-    {
-        return static::method() === 'POST';
-    }
-
     public static function isAjax(): bool
     {
         $request = static::instance();

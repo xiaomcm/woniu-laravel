@@ -41,17 +41,6 @@ abstract class Driver
         return (int) ($this->storage['id'] ?? 0);
     }
 
-    public function putFile(string $path, string $localFile): bool
-    {
-        $content = @file_get_contents($localFile);
-        if ($content === false) {
-            return false;
-        }
-        return $this->put($path, $content);
-    }
-
-
-
     protected function customDomain(): string
     {
         return rtrim(trim((string) ($this->config['domain'] ?? $this->storage['url'] ?? '')), '/');

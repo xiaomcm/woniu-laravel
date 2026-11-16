@@ -39,11 +39,6 @@ class Report extends BaseModel
         ];
     }
 
-    public static function categoryLabel(string $key): string
-    {
-        return self::categories()[$key] ?? '其他';
-    }
-
     public static function statusLabel(int $status): string
     {
         return match ($status) {

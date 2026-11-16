@@ -11,6 +11,9 @@ $siteName = (string) ($siteSettings['site_name'] ?? '蜗牛图床');
 // 后台名称可自定义；留空则沿用「站点名 后台」
 $adminTitle = trim((string) ($siteSettings['admin_title'] ?? ''));
 $brandName = $adminTitle !== '' ? $adminTitle : $siteName . ' 后台';
+// 新版本提示：只读 GitHub 版本号并缓存，查不到或已是最新就静默。
+// 只在后台布局算一次，传给下面的 footer_meta，前台页面不做这个检查。
+$updateInfo = \App\Services\UpdateChecker::check();
 ?>
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -113,13 +116,6 @@ $brandName = $adminTitle !== '' ? $adminTitle : $siteName . ' 后台';
         <a class="nav-item {!! str_starts_with($cp, '/admin/logs') ? 'active' : '' !!}" href="{{ url('admin/logs') }}">
             <svg class="ic"><use href="#i-clock"/></svg><span>操作日志</span>
         </a>
-
-        <?php $__adminVer = trim((string) \App\Core\Config::get('app.version', '')); ?>
-        @if ($__adminVer !== '')
-            <div class="sidebar-ver" title="当前程序版本 {{ $__adminVer }}">
-                <span class="label">版本</span><span class="num">v{{ $__adminVer }}</span>
-            </div>
-        @endif
     </aside>
 
     <div class="main">
@@ -172,7 +168,7 @@ $brandName = $adminTitle !== '' ? $adminTitle : $siteName . ' 后台';
             {!! $content !!}        </div>
 
         <footer class="app-foot">
-            @include('partials.footer_meta', ['footerPages' => []])
+            @include('partials.footer_meta', ['footerPages' => [], 'updateInfo' => $updateInfo])
         </footer>
     </div>
 </div>

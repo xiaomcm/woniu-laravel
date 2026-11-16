@@ -143,13 +143,6 @@ if (!function_exists('flashes')) {
     }
 }
 
-if (!function_exists('auth_user')) {
-    function auth_user(): ?array
-    {
-        return Auth::user();
-    }
-}
-
 if (!function_exists('is_admin')) {
     function is_admin(): bool
     {
@@ -257,13 +250,6 @@ if (!function_exists('badge')) {
     function badge(string $text, string $tone = 'muted'): string
     {
         return '<span class="badge badge-' . e($tone) . '">' . e($text) . '</span>';
-    }
-}
-
-if (!function_exists('is_post')) {
-    function is_post(): bool
-    {
-        return \App\Core\Request::method() === 'POST';
     }
 }
 
@@ -402,26 +388,6 @@ if (!function_exists('image_lock_badge')) {
     }
 }
 
-if (!function_exists('image_state_note')) {
-    /**
-     * 前台图片状态角标：让占位图有人话解释，不至于像破图
-     */
-    function image_state_note(array $image): string
-    {
-        $status = (int) ($image['status'] ?? 1);
-        if ($status === 2) {
-            return '已下线';
-        }
-        if ($status === 0) {
-            return '审核中';
-        }
-        if (trim((string) ($image['password'] ?? '')) !== '') {
-            return '加密';
-        }
-        return '';
-    }
-}
-
 if (!function_exists('current_path')) {
     function current_path(): string
     {
@@ -484,14 +450,6 @@ if (!function_exists('paginate_links')) {
             : '<span class="pager-item disabled">下一页</span>';
         $html .= '</nav>';
         return $html;
-    }
-}
-
-if (!function_exists('query')) {
-    function query(string $key, string $default = ''): string
-    {
-        $value = request()->query($key, $default);
-        return is_string($value) ? trim($value) : $default;
     }
 }
 

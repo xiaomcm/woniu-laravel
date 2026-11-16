@@ -160,22 +160,6 @@ class Driver extends BaseModel
         }
     }
 
-    public static function syncPivot(string $kind, int $ownerId, array $driverIds): void
-    {
-        $table = $kind === 'storage' ? 'storage_driver' : 'group_driver';
-        $column = $kind === 'storage' ? 'storage_id' : 'group_id';
-        DB::query('DELETE FROM ' . DB::table($table) . ' WHERE ' . $column . ' = :oid', ['oid' => $ownerId]);
-        foreach (array_unique(array_map('intval', $driverIds)) as $did) {
-            if ($did <= 0) {
-                continue;
-            }
-            try {
-                DB::insert($table, [$column => $ownerId, 'driver_id' => $did]);
-            } catch (\Throwable $e) {
-            }
-        }
-    }
-
     /**
      * 解析某角色组在某个存储上真正生效的驱动器，组级配置优先于存储级
      */
@@ -191,16 +175,4 @@ class Driver extends BaseModel
         return $rows[0] ?? null;
     }
 
-    /**
-     * 各类驱动器的数量，GROUP BY 聚合，保留原生 SQL。
-     */
-    public static function countByType(): array
-    {
-        $rows = DB::fetchAll('SELECT type, COUNT(*) AS c FROM ' . DB::table('drivers') . ' GROUP BY type');
-        $out = [];
-        foreach ($rows as $row) {
-            $out[(string) $row['type']] = (int) $row['c'];
-        }
-        return $out;
-    }
 }

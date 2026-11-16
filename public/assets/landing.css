@@ -328,6 +328,10 @@ body { margin: 0; font-family: var(--l-sans); color: var(--l-text); background: 
     .lx-stat + .lx-stat::before { display: none; }
     .lx-badges { gap: 8px; margin-top: 14px; }
     .lx-badge { padding: 7px 12px; font-size: 12px; }
+    /* 页脚版权：重复的 Powered by 站点名收起，备案号单独一行，避免长串在手机上折乱 */
+    .lx-foot-meta { justify-content: center; gap: 3px 0; font-size: 11.5px; line-height: 1.7; }
+    .lx-foot-meta .dot { margin: 0 4px; }
+    .lx-foot-meta .ver { font-size: 11.5px; }
 }
 /* 极窄屏只收站名与间距，登录 / 注册 / 主题三个按钮一个不少，仍贴右上角 */
 @media (max-width: 420px) {

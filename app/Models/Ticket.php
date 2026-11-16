@@ -197,11 +197,6 @@ class Ticket extends BaseModel
         return (int) static::query()->whereIn('status', [0, 1])->count();
     }
 
-    public static function countForUser(int $userId): int
-    {
-        return (int) static::query()->where('user_id', $userId)->count();
-    }
-
     /**
      * 删除工单，连同它下面的全部回复。
      *

@@ -156,16 +156,6 @@ class Auth
         User::updateById((int) $user['id'], ['last_login_at' => now()]);
     }
 
-    public static function loginById(int $id): bool
-    {
-        $user = User::find($id);
-        if ($user === null) {
-            return false;
-        }
-        self::login($user);
-        return true;
-    }
-
     public static function logout(): void
     {
         self::guard()->logout();

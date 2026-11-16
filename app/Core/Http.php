@@ -12,7 +12,7 @@ class Http
 {
 
 
-    public static function request(string $method, string $url, array $headers = [], ?string $body = null, int $timeout = 30): array
+    public static function request(string $method, string $url, array $headers = [], ?string $body = null, int $timeout = 30, int $connectTimeout = 10): array
     {
         $ch = curl_init($url);
         $headerLines = [];
@@ -24,7 +24,7 @@ class Http
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_FOLLOWLOCATION => false,
             CURLOPT_TIMEOUT        => $timeout,
-            CURLOPT_CONNECTTIMEOUT => 10,
+            CURLOPT_CONNECTTIMEOUT => $connectTimeout,
             CURLOPT_HTTPHEADER     => $headerLines,
             CURLOPT_SSL_VERIFYPEER => false,
             CURLOPT_SSL_VERIFYHOST => 0,

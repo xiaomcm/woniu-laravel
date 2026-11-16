@@ -7,11 +7,11 @@ use Tests\TestCase;
 /**
  * 版本号显示契约测试。
  *
- * 用户要求：后台要能看到版本号，页脚版权后面也要带版本号。
+ * 用户要求：后台版本号统一在底部版权处显示（侧栏那行重复的已删）。
  *
  * 锁三件事：
  *   1. 页脚不再硬编码版本号，而是读 config 的 app.version
- *   2. 后台侧栏有版本号那行
+ *   2. 后台底部引入 footer_meta、侧栏不再有版本号，并接上更新提示
  *   3. config/defaults.php 里的 version 格式是 x.y.z（发版脚本要解析它）
  */
 class VersionDisplayContractTest extends TestCase
@@ -47,15 +47,26 @@ class VersionDisplayContractTest extends TestCase
         );
     }
 
-    public function test_admin_sidebar_shows_version(): void
+    public function test_admin_shows_version_in_footer_not_sidebar(): void
     {
         $code = $this->viewFile('layouts/admin.blade.php');
 
-        $this->assertStringContainsString('sidebar-ver', $code, '后台侧栏没有版本号那行');
-        $this->assertStringContainsString(
-            'app.version',
+        // 版本号统一走底部版权（footer_meta），侧栏那行重复的已删掉
+        $this->assertStringNotContainsString(
+            'sidebar-ver',
             $code,
-            '后台侧栏版本号应该读配置'
+            '后台侧栏不该再有版本号，统一到底部版权处显示'
+        );
+        $this->assertStringContainsString(
+            "include('partials.footer_meta'",
+            $code,
+            '后台底部没有引入统一的版权行（版本号在那里显示）'
+        );
+        // 版本号从配置读这条仍由 footer_meta 契约保证，这里只确认后台接了更新提示数据
+        $this->assertStringContainsString(
+            'UpdateChecker',
+            $code,
+            '后台应该在底部版权处接上新版本提示'
         );
     }
 
