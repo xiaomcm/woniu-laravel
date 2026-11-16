@@ -206,6 +206,31 @@ chmod -R 755 /www/wwwroot/img.example.com
 
 每一步的字段说明和更多排错情况在 INSTALL.md 的 3.5。
 
+## 从 Lsky Pro 迁过来
+
+以前用兰空图床的，自带一个迁移工具，图片按原样搬，不重新压缩、不改格式。
+
+先干跑看一眼（不写任何东西）：
+
+```bash
+php tools/import_lsky.php \
+  --lsky-db=sqlite:/路径/lsky.sqlite \
+  --lsky-uploads=/路径/lsky/public/uploads \
+  --default-user=1 \
+  --dry-run
+```
+
+确认没问题去掉 `--dry-run` 再跑一次就真迁了。常见参数：
+
+- `--lsky-db` 支持 `sqlite:/路径` 和 `mysql://用户:密码@主机:端口/库名` 两种写法
+- `--lsky-uploads` 指向 Lsky 图片根目录，下面应该能看到 `2024/` 这种年份文件夹
+- `--user-map=1:1,2:3` 把 Lsky 的用户 ID 对到蜗牛的用户 ID；没对上的都归 `--default-user`
+- `--limit=100 --offset=0` 分批迁，几万张图的时候用得上
+- `--verify` 迁完抽查，从存储读回文件比对 sha1
+
+原文件名、原始上传时间、尺寸、描述、相册归属、公开状态都会带过来。跑一半断了直接再跑，
+已经迁过的按 sha1 自动跳过，不会重复。用户密码迁不了（哈希算法不一样），套餐订单也不迁。
+
 ## 数据声明
 
 这套程序装在你自己的服务器上，图片、数据库、账号密码都在你手里。作者这边没有副本，
