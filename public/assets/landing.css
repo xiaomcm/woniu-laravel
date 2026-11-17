@@ -47,6 +47,14 @@
 html { scroll-behavior: smooth; }
 body { margin: 0; font-family: var(--l-sans); color: var(--l-text); background: var(--l-bg); }
 
+/* 落地页内容长，必有垂直滚动；把浏览器默认那根粗滚动条收细、融进深色背景，
+   手机上不再突兀。滚动功能不受影响。 */
+html { scrollbar-width: thin; scrollbar-color: rgba(120,165,255,.35) transparent; }
+html::-webkit-scrollbar { width: 5px; height: 5px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: rgba(120,165,255,.35); border-radius: 99px; }
+html::-webkit-scrollbar-thumb:hover { background: rgba(120,165,255,.55); }
+
 .lx-wrap { overflow-x: hidden; position: relative; }
 
 #lx-canvas { position: fixed; inset: 0; z-index: -1; pointer-events: none; }

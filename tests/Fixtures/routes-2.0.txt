@@ -1,9 +1,10 @@
-#
-# 共 236 条
-# 改这份清单前先想清楚是不是漏了功能。
-# 由 tests/generate_route_fixture.php 从当前路由表导出，格式：METHOD /path
 # 蜗牛图床路由契约基准
+# 由 tests/generate_route_fixture.php 从当前路由表导出，格式：METHOD /path
 # 这是必须注册的全部路由，一条不多一条不少。
+# 改这份清单前先想清楚是不是漏了功能。
+#
+# 共 241 条
+
 DELETE /api/v1/albums/{id:num}
 DELETE /api/v1/albums/{id:num}/images/{imageId:num}
 DELETE /api/v1/images/{id:num}
@@ -103,6 +104,8 @@ GET /covers/{path:any}
 GET /dashboard
 GET /explore
 GET /feedback
+GET /forgot
+GET /forgot/reset
 GET /i/{key:slug}
 GET /images
 GET /images/{id:num}/thumb
@@ -151,6 +154,7 @@ POST /admin/logs/files/clear
 POST /admin/logs/files/delete
 POST /admin/logs/{id:num}/delete
 POST /admin/settings
+POST /admin/settings/check-update
 POST /admin/settings/mail-test
 POST /admin/shop/coupons
 POST /admin/shop/coupons/{id:num}
@@ -211,6 +215,8 @@ POST /api/v1/tokens/{id:num}/revoke
 POST /api/v1/upload
 POST /captcha/sms
 POST /feedback
+POST /forgot/reset
+POST /forgot/send
 POST /i/{key:slug}
 POST /images/delete
 POST /images/destroy

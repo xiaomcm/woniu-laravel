@@ -11,12 +11,45 @@
         });
     }
     function initTheme() {
-        const saved = localStorage.getItem(THEME_KEY);
+        const root = document.documentElement;
+        const auto = root.getAttribute('data-theme-auto') === '1';
+        const start = root.getAttribute('data-dark-start') || '22:00';
+        const end = root.getAttribute('data-dark-end') || '07:00';
         const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-        applyTheme(saved || (prefersDark ? 'dark' : 'light'));
+
+        // 当前时刻是否落在夜间时段。结束时间早于开始时间 = 跨零点（22:00→次日 07:00）。
+        function isDarkByTime() {
+            const toMin = function (s) {
+                const p = String(s).split(':');
+                return (parseInt(p[0], 10) || 0) * 60 + (parseInt(p[1], 10) || 0);
+            };
+            const a = toMin(start), b = toMin(end);
+            if (a === b) { return false; }
+            const d = new Date();
+            const now = d.getHours() * 60 + d.getMinutes();
+            return a < b ? (now >= a && now < b) : (now >= a || now < b);
+        }
+
+        // 用户手动选过就以用户为准；否则按后台定时（开了）或系统偏好（没开）
+        function themeNow() {
+            const saved = localStorage.getItem(THEME_KEY);
+            if (saved === 'dark' || saved === 'light') { return saved; }
+            if (auto) { return isDarkByTime() ? 'dark' : 'light'; }
+            return prefersDark ? 'dark' : 'light';
+        }
+
+        applyTheme(themeNow());
+        // 定时模式下每分钟核对一次，到点自动切换；用户手动选过后不再干预
+        if (auto) {
+            setInterval(function () {
+                if (localStorage.getItem(THEME_KEY) === null) {
+                    applyTheme(isDarkByTime() ? 'dark' : 'light');
+                }
+            }, 60000);
+        }
         document.querySelectorAll('[data-theme-toggle]').forEach(function (btn) {
             btn.addEventListener('click', function () {
-                const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+                const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
                 applyTheme(next);
                 localStorage.setItem(THEME_KEY, next);
             });
@@ -335,7 +368,13 @@
         function uploadFiles(fileList) {
             const files = Array.prototype.slice.call(fileList);
             const maxSize = parseInt(root.getAttribute('data-max-size') || '0', 10);
+            const maxNum = parseInt(root.getAttribute('data-max-num') || '0', 10);
             const allowed = (root.getAttribute('data-allowed') || '').split(',').filter(Boolean);
+            // 单次张数限制：跟后台用户组配置一致，超了整批拦下（后端也会再校验一次）
+            if (maxNum > 0 && files.length > maxNum) {
+                queueItem('本次选择', '单次最多上传 ' + maxNum + ' 张，你这次选了 ' + files.length + ' 张', 'error');
+                return;
+            }
             const valid = [];
 
             files.forEach(function (file) {

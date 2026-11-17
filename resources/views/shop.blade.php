@@ -46,6 +46,9 @@ if ($current !== null) {
         $limit = (int) ($package['purchase_limit'] ?? 0);
         $boughtCount = (int) ($bought[(int) $package['id']] ?? 0);
         $reached = $limit > 0 && $boughtCount >= $limit;
+        // 用户组权益读套餐绑定的组（买后真正生效的配置），不读套餐自身那两个摆设字段
+        $group = $groupLimits[(int) ($package['group_id'] ?? 0)]
+            ?? ['name' => '', 'max_file_size' => 0, 'daily_limit' => 0, 'benefits' => []];
         ?>
         <div class="plan-card {!! $featured ? 'featured' : '' !!}">
             <div class="plan-name">{{ (string) $package['name'] }}</div>
@@ -62,14 +65,6 @@ if ($current !== null) {
                 @else
                     <li>存储空间不限</li>
                 @endif
-                @if ((int) $package['max_file_size'] > 0)
-                    <li>单文件最大 {{ format_bytes((int) $package['max_file_size']) }}</li>
-                @endif
-                @if ((int) $package['daily_limit'] > 0)
-                    <li>每日 {!! (int) $package['daily_limit'] !!} 张</li>
-                @else
-                    <li>每日上传不限</li>
-                @endif
                 @if ($limit > 0)
                     <li>每人限购 {!! $limit !!} 次</li>
                     @if ($user !== null)
@@ -80,6 +75,17 @@ if ($current !== null) {
                     <li>{{ $feature }}</li>
                 @endforeach
             </ul>
+            {{-- 用户组权益：买套餐后升级到的用户组，实际生效的那套配置 --}}
+            @if ($group['name'] !== '' && count($group['benefits']) > 0)
+                <div class="plan-group-benefits">
+                    <div class="plan-group-title">购买后升级「{{ $group['name'] }}」，享 {!! count($group['benefits']) !!} 项权益</div>
+                    <ul class="plan-features">
+                        @foreach ($group['benefits'] as $benefit)
+                            <li>{{ $benefit }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
             <div class="spacer" style="flex:1"></div>
             @if ($user === null)
                 <a class="btn btn-primary btn-block" href="{{ url('login') }}">登录后购买</a>

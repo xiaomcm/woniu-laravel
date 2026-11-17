@@ -22,7 +22,7 @@ class OauthController extends Controller
     public function redirect(int $id): void
     {
         if (!Setting::bool('oauth_enabled', false)) {
-            abort(404, '第三方登录未开放');
+            \App\Core\Response::featureDisabled('第三方登录', '站主暂时关闭了第三方登录，请用账号密码登录。');
         }
 
         $driver = DriveService::socialById($id);
@@ -40,7 +40,7 @@ class OauthController extends Controller
     public function callback(): void
     {
         if (!Setting::bool('oauth_enabled', false)) {
-            abort(404, '第三方登录未开放');
+            \App\Core\Response::featureDisabled('第三方登录', '站主暂时关闭了第三方登录，请用账号密码登录。');
         }
 
         $state = (string) Request::input('state', '');
@@ -117,6 +117,9 @@ class OauthController extends Controller
                     'avatar'   => (string) ($profile['avatar'] ?? ''),
                     'status'   => 1,
                 ]);
+                // 第三方登录的新用户同样绑定后台默认套餐（已存在的老用户不受影响），
+                // 绑定会改 group_id/capacity，所以之后再查一次拿最新数据。
+                \App\Http\Controllers\AuthController::applyDefaultPackage($id);
                 $user = User::find($id);
             }
 

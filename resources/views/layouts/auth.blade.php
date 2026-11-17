@@ -11,7 +11,7 @@ $seoDesc = trim((string) ($siteSettings['site_seo_description'] ?? ''));
 $seoDesc = $seoDesc !== '' ? $seoDesc : (string) ($siteSettings['site_description'] ?? '');
 ?>
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" {!! theme_html_attrs() !!}>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">

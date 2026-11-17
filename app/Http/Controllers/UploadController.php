@@ -28,11 +28,13 @@ class UploadController extends Controller
         if ($user === null) {
             redirect('/login?redirect=' . urlencode('/upload'));
         }
+        $group = Group::find((int) $user['group_id']);
         return $this->view('upload', [
             'pageTitle' => '上传图片',
             'albums'    => Album::allForUser((int) $user['id']),
             'storages'  => Group::storages((int) $user['group_id']) ?: StorageModel::enabled(),
             'maxSize'   => Setting::int('upload_max_size', 5242880),
+            'maxNum'    => $group === null ? 0 : (int) ($group['max_upload_num'] ?? 0),
             'allowed'   => (string) Setting::get('upload_allowed', ''),
         ]);
     }
@@ -55,6 +57,14 @@ class UploadController extends Controller
 
         if ($files === [] && $url === '') {
             $this->api(false, '没有收到文件');
+        }
+
+        // 单次上传张数：读用户组配置（后台用户组里改的那个值），0 为不限。
+        // 放在这批文件真正上传之前拦，超限直接整批拒绝，不写半个文件进去。
+        $group = $user === null ? null : Group::find((int) $user['group_id']);
+        $maxNum = $group === null ? 0 : (int) ($group['max_upload_num'] ?? 0);
+        if ($maxNum > 0 && count($files) > $maxNum) {
+            $this->api(false, '单次最多上传 ' . $maxNum . ' 张，你这次选了 ' . count($files) . ' 张');
         }
 
         $service = new UploadService($user, $albumId, $storageId);

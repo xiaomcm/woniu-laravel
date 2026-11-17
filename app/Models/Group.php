@@ -174,6 +174,61 @@ class Group extends BaseModel
     }
 
     /**
+     * 把一个用户组的权益转成展示用的中文清单（前台套餐卡片 / 结算页共用）。
+     *
+     * 注意：这里的字段都是「买套餐后真正写进用户、上传时实际生效」的组配置，
+     * 不是套餐自身那两个已废弃的字段。容量不在这里 —— 容量由套餐自己的
+     * capacity 覆盖，由调用方单独展示。
+     *
+     * @return array<int, string> 每条是一句中文权益描述
+     */
+    public static function benefits(array $group): array
+    {
+        $out = [];
+        $maxFile = (int) ($group['max_file_size'] ?? 0);
+        $out[] = $maxFile > 0 ? '单文件最大 ' . \format_bytes($maxFile) : '单文件大小不限';
+
+        $daily = (int) ($group['daily_limit'] ?? 0);
+        $out[] = $daily > 0 ? '每日可传 ' . $daily . ' 张' : '每日上传不限';
+
+        $num = (int) ($group['max_upload_num'] ?? 0);
+        if ($num > 0) {
+            $out[] = '单次最多 ' . $num . ' 张';
+        }
+
+        $exts = self::allowedExtensions($group);
+        if ($exts !== []) {
+            $out[] = '支持格式 ' . implode(' / ', array_slice($exts, 0, 8));
+        } else {
+            $out[] = '支持常见图片格式';
+        }
+
+        $perms = self::permissions($group);
+        $permLabels = [
+            'upload'    => '上传图片',
+            'album'     => '使用相册',
+            'api'       => 'API 接口',
+            'explore'   => '图片广场展示',
+            'download'  => '打包下载',
+        ];
+        $enabled = [];
+        foreach ($permLabels as $key => $label) {
+            if (!empty($perms[$key])) {
+                $enabled[] = $label;
+            }
+        }
+        if ($enabled !== []) {
+            $out[] = '开放 ' . implode('、', $enabled);
+        }
+
+        if (!empty($perms['watermark']) || (int) ($group['watermark'] ?? 0) === 1) {
+            $out[] = '图片水印';
+        }
+
+        return $out;
+    }
+
+    /**
      * 手工类型转换。
      *
      * cast() 逐字保留原有逻辑：取出来的值类型必须和旧版完全一样，

@@ -40,7 +40,7 @@ class SupportController extends Controller
         Auth::requireLogin();
 
         if (!Setting::bool('ticket_enabled', true)) {
-            abort(404, '工单未开放');
+            \App\Core\Response::featureDisabled('工单', '站主暂时关闭了工单系统。');
         }
 
         return $this->view('ticket_new', [
@@ -55,7 +55,7 @@ class SupportController extends Controller
         $this->validateCsrf();
 
         if (!Setting::bool('ticket_enabled', true)) {
-            abort(404, '工单未开放');
+            \App\Core\Response::featureDisabled('工单', '站主暂时关闭了工单系统。');
         }
 
         $subject = trim((string) Request::input('subject', ''));
@@ -143,7 +143,7 @@ class SupportController extends Controller
     public function feedback(): HttpResponse
     {
         if (!Setting::bool('feedback_enabled', true)) {
-            abort(404, '意见反馈未开放');
+            \App\Core\Response::featureDisabled('意见反馈', '站主暂时关闭了意见反馈。');
         }
 
         return $this->view('feedback', [
@@ -158,7 +158,7 @@ class SupportController extends Controller
         $this->validateCsrf();
 
         if (!Setting::bool('feedback_enabled', true)) {
-            abort(404, '意见反馈未开放');
+            \App\Core\Response::featureDisabled('意见反馈', '站主暂时关闭了意见反馈。');
         }
 
         $content = trim((string) Request::input('content', ''));

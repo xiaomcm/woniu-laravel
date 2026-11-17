@@ -40,6 +40,11 @@ class Setting
             'register_email_verify' => '0',
             'default_group_id' => '1',
 
+            // 夜间模式定时切换：默认关闭（尊重访客/system 偏好），开启后按时间自动深浅色
+            'theme_auto_enabled' => '0',
+            'theme_dark_start'   => '22:00',
+            'theme_dark_end'     => '07:00',
+
             // 注册验证码：全局开关 + 服务商 + 模式（image / slide / sms）
             'captcha_enabled'  => '0',
             'captcha_provider' => 'local',

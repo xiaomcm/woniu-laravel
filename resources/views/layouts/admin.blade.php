@@ -11,12 +11,12 @@ $siteName = (string) ($siteSettings['site_name'] ?? '蜗牛图床');
 // 后台名称可自定义；留空则沿用「站点名 后台」
 $adminTitle = trim((string) ($siteSettings['admin_title'] ?? ''));
 $brandName = $adminTitle !== '' ? $adminTitle : $siteName . ' 后台';
-// 新版本提示：只读 GitHub 版本号并缓存，查不到或已是最新就静默。
+// 新版本提示：每次打开后台都实时读 GitHub 版本号，查不到或已是最新就静默。
 // 只在后台布局算一次，前台页面不做这个检查、也不会显示提示。
 $updateInfo = \App\Services\UpdateChecker::check();
 ?>
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" {!! theme_html_attrs() !!}>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">

@@ -71,6 +71,12 @@ Route::get('/captcha/image', [CaptchaController::class, 'image']);
 Route::post('/captcha/sms', [CaptchaController::class, 'sendSms']);
 Route::post('/logout', [AuthController::class, 'logout']);
 
+// 找回密码（邮箱验证码）
+Route::get('/forgot', [AuthController::class, 'forgotForm']);
+Route::post('/forgot/send', [AuthController::class, 'forgotSend']);
+Route::get('/forgot/reset', [AuthController::class, 'forgotResetForm']);
+Route::post('/forgot/reset', [AuthController::class, 'forgotReset']);
+
 Route::get('/upload', [UploadController::class, 'index']);
 Route::post('/upload', [UploadController::class, 'store']);
 
@@ -135,6 +141,7 @@ Route::post('/admin/images/delete', [AdminImageController::class, 'delete']);
 Route::get('/admin/settings', [AdminSettingController::class, 'index']);
 Route::post('/admin/settings', [AdminSettingController::class, 'save']);
 Route::post('/admin/settings/mail-test', [AdminSettingController::class, 'mailTest']);
+Route::post('/admin/settings/check-update', [AdminSettingController::class, 'checkUpdate']);
 
 Route::get('/admin/logs', [AdminLogController::class, 'index']);
 Route::post('/admin/logs/delete', [AdminLogController::class, 'batchDestroy']);

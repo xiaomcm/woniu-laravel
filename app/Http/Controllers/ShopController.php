@@ -13,6 +13,7 @@ use App\Core\Auth;
 use App\Core\Request;
 use App\Core\Setting;
 use App\Models\Driver as DriverModel;
+use App\Models\Group;
 use App\Models\Order;
 use App\Models\Package;
 use App\Models\User;
@@ -23,12 +24,11 @@ class ShopController extends Controller
     public function index(): HttpResponse
     {
         if (!Setting::bool('shop_enabled', false)) {
-            abort(404, '商城未开放');
+            \App\Core\Response::featureDisabled('商城', '站主暂时关闭了商城，套餐购买与扩容暂不可用。');
         }
 
         $user = Auth::user();
         $packages = Package::allRows(true);
-        $order = Setting::int('default_package_id', 1);
 
         $current = null;
         if ($user !== null && !empty($user['package_id'])) {
@@ -43,13 +43,18 @@ class ShopController extends Controller
             }
         }
 
+        // 套餐的单文件/每日张数不再读套餐自身（那两个字段填了不生效），
+        // 改读套餐绑定用户组的配置 —— 这才是买后真正生效的值。
+        $groupLimits = self::groupLimits();
+
         return $this->view('shop', [
-            'pageTitle' => '套餐与扩容',
-            'packages'  => $packages,
-            'user'      => $user,
-            'current'   => $current,
-            'expireAt'  => $user['package_expired_at'] ?? null,
-            'bought'    => $bought,
+            'pageTitle'   => '套餐与扩容',
+            'packages'    => $packages,
+            'user'        => $user,
+            'current'     => $current,
+            'expireAt'    => $user['package_expired_at'] ?? null,
+            'bought'      => $bought,
+            'groupLimits' => $groupLimits,
         ], 'layouts/app');
     }
 
@@ -57,7 +62,7 @@ class ShopController extends Controller
     {
         $packageId = (int) $packageId;
         if (!Setting::bool('shop_enabled', false)) {
-            abort(404, '商城未开放');
+            \App\Core\Response::featureDisabled('商城', '站主暂时关闭了商城，套餐购买与扩容暂不可用。');
         }
 
         $user = Auth::requireLogin();
@@ -82,16 +87,38 @@ class ShopController extends Controller
         $limitReached = $limit > 0 && $purchased >= $limit;
 
         return $this->view('checkout', [
-            'pageTitle' => '确认订单',
-            'package'   => $package,
-            'drivers'   => $drivers,
-            'user'      => $user,
-            'suggestId' => $bound === null ? 0 : (int) $bound['id'],
-            'free'      => (int) $package['price_cents'] === 0,
-            'limit'     => $limit,
-            'purchased' => $purchased,
+            'pageTitle'    => '确认订单',
+            'package'      => $package,
+            'drivers'      => $drivers,
+            'user'         => $user,
+            'suggestId'    => $bound === null ? 0 : (int) $bound['id'],
+            'free'         => (int) $package['price_cents'] === 0,
+            'limit'        => $limit,
+            'purchased'    => $purchased,
             'limitReached' => $limitReached,
+            'groupLimits'  => self::groupLimits(),
         ], 'layouts/app');
+    }
+
+    /**
+     * 用户组 id → 该组的完整权益（单文件/每日/单次数量/格式/权限）。
+     * 套餐页/结算页展示「用户组权益」时读这里，跟上传校验读的是同一份数据，
+     * 保证用户「看到的」和买后「实际生效的」一致。
+     *
+     * @return array<int, array{name:string, max_file_size:int, daily_limit:int, benefits:array<int,string>}>
+     */
+    private static function groupLimits(): array
+    {
+        $out = [];
+        foreach (Group::allRows() as $group) {
+            $out[(int) $group['id']] = [
+                'name'          => (string) ($group['name'] ?? ''),
+                'max_file_size' => (int) ($group['max_file_size'] ?? 0),
+                'daily_limit'   => (int) ($group['daily_limit'] ?? 0),
+                'benefits'      => Group::benefits($group),
+            ];
+        }
+        return $out;
     }
 
     public function quote(): void
@@ -117,7 +144,7 @@ class ShopController extends Controller
         $this->validateCsrf();
 
         if (!Setting::bool('shop_enabled', false)) {
-            abort(404, '商城未开放');
+            \App\Core\Response::featureDisabled('商城', '站主暂时关闭了商城，套餐购买与扩容暂不可用。');
         }
 
         $packageId = Request::int('package_id', 0);

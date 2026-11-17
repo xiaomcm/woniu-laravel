@@ -60,6 +60,27 @@ $get = static fn (string $key, string $default = ''): string => (string) ($setti
     </div>
 
     <div class="card">
+        <div class="card-head"><h2>夜间模式</h2></div>
+        <div class="card-body">
+            <label class="switch" style="margin-bottom:14px">
+                <input type="checkbox" name="theme_auto_enabled" value="1" {!! $get('theme_auto_enabled', '0') === '1' ? 'checked' : '' !!}>
+                <span class="track"></span><span>按时间自动切换深浅色</span>
+            </label>
+            <div class="form-row">
+                <div class="field">
+                    <label class="label">夜间开始 <span class="hint">到点切深色，24 小时制</span></label>
+                    <input class="input" type="time" name="theme_dark_start" value="{{ $get('theme_dark_start', '22:00') }}">
+                </div>
+                <div class="field">
+                    <label class="label">夜间结束 <span class="hint">到点切回浅色</span></label>
+                    <input class="input" type="time" name="theme_dark_end" value="{{ $get('theme_dark_end', '07:00') }}">
+                </div>
+            </div>
+            <p class="hint" style="margin:12px 0 0">访客手动点过主题按钮的，以访客自己的选择为准；没手动选过的，按这里的时间自动切换。结束时间早于开始时间表示跨零点（比如 22:00 到次日 07:00）。</p>
+        </div>
+    </div>
+
+    <div class="card">
         <div class="card-head"><h2>注册与用户</h2></div>
         <div class="card-body">
             <div style="display:flex;gap:26px;flex-wrap:wrap;margin-bottom:16px">
@@ -426,8 +447,14 @@ $get = static fn (string $key, string $default = ''): string => (string) ($setti
             </div>
             <div class="form-row">
                 <div class="field">
-                    <label class="label">默认套餐 ID <span class="hint">商城首页推荐位</span></label>
-                    <input class="input" name="default_package_id" value="{{ $get('default_package_id', '1') }}">
+                    <label class="label">新用户默认套餐 <span class="hint">注册后自动绑定</span></label>
+                    <select class="select" name="default_package_id">
+                        <option value="0" {!! $get('default_package_id', '1') === '0' ? 'selected' : '' !!}>不自动绑定</option>
+                        @foreach ($allPackages as $pkg)
+                            <option value="{!! (int) $pkg['id'] !!}" {!! $get('default_package_id', '1') === (string) (int) $pkg['id'] ? 'selected' : '' !!}>{{ (string) $pkg['name'] }}</option>
+                        @endforeach
+                    </select>
+                    <p class="hint" style="margin:6px 0 0">新用户注册后自动获得该套餐的用户组与容量权益，等同于免费开通。</p>
                 </div>
                 <div class="field">
                     <label class="label">订单超时（分钟）</label>
@@ -530,9 +557,92 @@ $get = static fn (string $key, string $default = ''): string => (string) ($setti
         </div>
     </div>
 
-    <div style="position:sticky;bottom:16px;display:flex;justify-content:flex-end;gap:10px;padding-top:6px">
+    <div style="display:flex;justify-content:flex-end;gap:10px;padding-top:6px">
         <button class="btn btn-primary" type="submit" data-once>
             <svg class="ic" style="width:15px;height:15px"><use href="#i-check"/></svg> 保存全部设置
         </button>
     </div>
 </form>
+
+{{-- 更新检查 + 更新日志：放在表单外，检查按钮不会误触发表单提交 --}}
+<div class="card" id="update-check-card" style="margin-top:18px">
+    <div class="card-head">
+        <h2>更新检查</h2>
+        <div class="spacer"></div>
+        <button class="btn" type="button" id="update-check-btn">检查更新</button>
+    </div>
+    <div class="card-body">
+        <div class="update-now">
+            当前版本 <span class="update-ver">v{{ $currentVersion }}</span>
+            <span id="update-check-result" class="update-result"></span>
+        </div>
+
+        <div class="update-log-head">更新日志</div>
+        @if (count($changelog) > 0)
+            {{-- 只显示最后一次更新，不堆历史版本 --}}
+            @php $log = $changelog[0]; @endphp
+            <div class="update-log">
+                <div class="update-log-item">
+                    <div class="update-log-title">
+                        <span class="update-log-ver">{{ $log['version'] }}</span>
+                        @if ($log['date'] !== '')
+                            <span class="update-log-date">{{ $log['date'] }}</span>
+                        @endif
+                    </div>
+                    @if (count($log['items']) > 0)
+                        <ul class="update-log-items">
+                            @foreach ($log['items'] as $item)
+                                <li>{{ $item }}</li>
+                            @endforeach
+                        </ul>
+                    @endif
+                </div>
+            </div>
+        @else
+            <p class="hint">没有读到更新日志。确认程序包里带有 CHANGELOG.md。</p>
+        @endif
+    </div>
+</div>
+<script>
+(function () {
+    var btn = document.getElementById('update-check-btn');
+    var out = document.getElementById('update-check-result');
+    if (!btn) { return; }
+    btn.addEventListener('click', function () {
+        btn.disabled = true;
+        out.textContent = '正在检查…';
+        out.className = 'update-result';
+        var fd = new FormData();
+        fd.append('_token', '{{ csrf_token() }}');
+        fetch('{{ url('admin/settings/check-update') }}', {
+            method: 'POST', body: fd,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+            var d = (j && j.data) || {};
+            if (!d.ok) {
+                out.textContent = '连不上 GitHub，稍后再试（不影响使用）';
+                out.className = 'update-result update-warn';
+            } else if (d.has_update) {
+                out.innerHTML = '';
+                var a = document.createElement('a');
+                a.href = d.url || '#';
+                a.target = '_blank';
+                a.rel = 'noopener';
+                a.textContent = '发现新版本 v' + d.latest + '，查看更新说明';
+                out.appendChild(a);
+                out.className = 'update-result update-new';
+            } else {
+                out.textContent = '已是最新版本';
+                out.className = 'update-result update-ok';
+            }
+        })
+        .catch(function () {
+            out.textContent = '检查失败，请稍后重试';
+            out.className = 'update-result update-warn';
+        })
+        .finally(function () { btn.disabled = false; });
+    });
+})();
+</script>

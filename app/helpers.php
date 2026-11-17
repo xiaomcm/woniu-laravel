@@ -471,3 +471,21 @@ if (!function_exists('session_ttl_script')) {
         return '<script>window.__SESSION_LEFT=' . (int) $left . ';</script>';
     }
 }
+
+if (!function_exists('theme_html_attrs')) {
+    /**
+     * 夜间模式定时配置，作为 data 属性注入 <html>，供 app.js 读取。
+     * 只在后台开启时输出，关闭时页面零额外属性。
+     */
+    function theme_html_attrs(): string
+    {
+        if (!\App\Core\Setting::bool('theme_auto_enabled', false)) {
+            return '';
+        }
+        $start = trim((string) \App\Core\Setting::get('theme_dark_start', '22:00'));
+        $end = trim((string) \App\Core\Setting::get('theme_dark_end', '07:00'));
+        return ' data-theme-auto="1"'
+            . ' data-dark-start="' . e($start) . '"'
+            . ' data-dark-end="' . e($end) . '"';
+    }
+}

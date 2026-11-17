@@ -45,9 +45,14 @@
                 @foreach ($packages as $package)
                     <?php
                     $groupName = '-';
+                    $groupMaxFile = 0;
+                    $groupDaily = 0;
                     foreach ($groups as $group) {
                         if ((int) $group['id'] === (int) $package['group_id']) {
                             $groupName = (string) $group['name'];
+                            // 单文件/每日张数显示绑定用户组的实际配置（买后真正生效的值）
+                            $groupMaxFile = (int) ($group['max_file_size'] ?? 0);
+                            $groupDaily = (int) ($group['daily_limit'] ?? 0);
                         }
                     }
                     ?>
@@ -61,8 +66,8 @@
                         <td>{{ format_money((int) $package['price_cents']) }}</td>
                         <td>{!! (int) $package['duration_days'] > 0 ? (int) $package['duration_days'] . ' 天' : '永久' !!}</td>
                         <td>{!! (int) $package['capacity'] > 0 ? e(format_bytes((int) $package['capacity'])) : '不限' !!}</td>
-                        <td>{!! (int) $package['max_file_size'] > 0 ? e(format_bytes((int) $package['max_file_size'])) : '不限' !!}</td>
-                        <td>{!! (int) $package['daily_limit'] > 0 ? (int) $package['daily_limit'] : '不限' !!}</td>
+                        <td>{!! $groupMaxFile > 0 ? e(format_bytes($groupMaxFile)) : '不限' !!}</td>
+                        <td>{!! $groupDaily > 0 ? $groupDaily : '不限' !!}</td>
                         <td>{!! (int) ($package['purchase_limit'] ?? 0) > 0 ? '限购 ' . (int) $package['purchase_limit'] . ' 次' : '不限' !!}</td>
                         <td>{{ $groupName }}</td>
                         <td>
@@ -80,8 +85,6 @@
                                         'price'             => money_input((int) $package['price_cents']),
                                         'duration_days'     => (int) $package['duration_days'],
                                         'capacity_mb'       => round((int) $package['capacity'] / 1048576, 2),
-                                        'max_file_size_mb'  => round((int) $package['max_file_size'] / 1048576, 2),
-                                        'daily_limit'       => (int) $package['daily_limit'],
                                         'purchase_limit'    => (int) ($package['purchase_limit'] ?? 0),
                                         'description'       => $package['description'],
                                         'features'          => implode("\n", $package['features_list']),
@@ -106,7 +109,7 @@
 </div>
 
 <?php
-$packageForm = static function (string $id, string $action) use ($groups, $__env): void { ?>
+$packageForm = static function (string $id, string $action) use ($groups, $groupBenefits, $__env): void { ?>
     <form class="modal-box" id="{{ $id }}" method="post" action="{{ $action }}">
         <div class="modal-head">
             <h3 data-form-title>套餐</h3>
@@ -137,20 +140,11 @@ $packageForm = static function (string $id, string $action) use ($groups, $__env
                     <input class="input" name="capacity_mb" value="1024">
                 </div>
                 <div class="field">
-                    <label class="label">单文件上限 <span class="hint">MB，0 为不限</span></label>
-                    <input class="input" name="max_file_size_mb" value="5">
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="field">
-                    <label class="label">每日上传张数 <span class="hint">0 为不限</span></label>
-                    <input class="input" name="daily_limit" value="0">
-                </div>
-                <div class="field">
                     <label class="label">限购次数 <span class="hint">0 为不限，每人最多买 N 次</span></label>
                     <input class="input" name="purchase_limit" value="0">
                 </div>
             </div>
+            <p class="hint" style="margin:2px 0 4px">单文件上限与每日上传张数由下方「升级到用户组」决定，买套餐后按该用户组的设置生效，不用在这里重复填。</p>
             <div class="form-row">
                 <div class="field">
                     <label class="label">升级到用户组</label>
@@ -159,6 +153,12 @@ $packageForm = static function (string $id, string $action) use ($groups, $__env
                             <option value="{!! (int) $group['id'] !!}">{{ (string) $group['name'] }}</option>
                         @endforeach
                     </select>
+                    <div class="hint" style="margin-top:8px;line-height:1.7">
+                        <strong>各组权益（买套餐后用户实际得到的）：</strong><br>
+                        @foreach ($groups as $group)
+                            · {{ (string) $group['name'] }}：{!! e(implode('、', $groupBenefits[(int) $group['id']] ?? [])) !!}<br>
+                        @endforeach
+                    </div>
                 </div>
                 <div class="field">
                     <label class="label">一句话描述</label>

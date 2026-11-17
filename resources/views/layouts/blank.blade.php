@@ -9,7 +9,7 @@ $pageTitle = $pageTitle ?? '';
 $siteName = (string) ($siteSettings['site_name'] ?? '蜗牛图床');
 ?>
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" {!! theme_html_attrs() !!}>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">

@@ -224,7 +224,20 @@ class PaymentService
         if ($package === null || $user === null) {
             return;
         }
+        // 同套餐续费要从原到期时间往后叠，这是买套餐特有的行为，传 true。
+        self::grantPackage($user, $package, true);
+    }
 
+    /**
+     * 把一个套餐的权益写进用户：用户组、容量、套餐 id、到期时间。
+     * 买套餐付款成功（fulfill）和新用户注册默认绑定都走这里，保证两边权益一致。
+     *
+     * @param array $user               用户行
+     * @param array $package            套餐行
+     * @param bool  $renewFromExisting  同套餐是否从原到期时间叠加（续费用 true，注册首次绑定用 false）
+     */
+    public static function grantPackage(array $user, array $package, bool $renewFromExisting = false): void
+    {
         $now = time();
         $days = (int) $package['duration_days'];
 
@@ -234,9 +247,10 @@ class PaymentService
             // 所以 NULL 的用户天然不会被降级，永久套餐就是真的永久。
             $expire = null;
         } else {
-            $currentExpire = !empty($user['package_expired_at']) ? strtotime((string) $user['package_expired_at']) : 0;
+            $currentExpire = $renewFromExisting && !empty($user['package_expired_at'])
+                ? strtotime((string) $user['package_expired_at']) : 0;
             $samePackage = (int) ($user['package_id'] ?? 0) === (int) $package['id'];
-            // 同套餐续费：从原到期时间往后叠；换套餐则从现在开始
+            // 同套餐续费：从原到期时间往后叠；换套餐 / 注册首次绑定则从现在开始
             $start = ($samePackage && $currentExpire > $now) ? $currentExpire : $now;
             $expire = date('Y-m-d H:i:s', $start + $days * 86400);
         }

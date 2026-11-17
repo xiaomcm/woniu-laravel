@@ -154,6 +154,61 @@ HTML;
     }
 
     /**
+     * 功能被站主关闭时显示的友好提示页。
+     *
+     * 刻意返回 HTTP 200 而不是 404：功能关闭是站点正常的配置状态，不是错误；
+     * 而且不少宝塔环境开了 fastcgi_intercept_errors，程序返回的 4xx 会被 nginx
+     * 换成它自己的默认错误页（就是那个丑陋的「404 Not Found / nginx」）。
+     * 用 200 就能稳定显示下面这张美化页，不会被中间件接管。
+     */
+    public static function featureDisabled(string $feature, string $tip = ''): never
+    {
+        $title = htmlspecialchars($feature, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $tipText = $tip !== ''
+            ? '<p class="tip">' . htmlspecialchars($tip, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</p>'
+            : '<p class="tip">该功能暂时没有开放，请稍后再来看看。</p>';
+        $home = htmlspecialchars(base_url() . '/', ENT_QUOTES, 'UTF-8');
+        $html = <<<HTML
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{$title} · 暂未开放</title>
+<style>
+*{box-sizing:border-box}
+html,body{min-height:100%;margin:0}
+body{display:flex;align-items:center;justify-content:center;padding:24px;background:linear-gradient(160deg,#f6f7fb,#eef1f8);
+color:#1f2430;font:15px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+.card{width:100%;max-width:420px;background:#fff;border:1px solid #e6e8ef;border-radius:18px;
+box-shadow:0 18px 50px -28px rgba(76,110,245,.45);padding:40px 32px;text-align:center}
+.icon{width:66px;height:66px;margin:0 auto 20px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+background:#eef2ff;color:#4c6ef5}
+.icon svg{width:32px;height:32px}
+h1{font-size:20px;margin:0 0 8px;font-weight:700}
+.sub{font-size:13px;color:#8b93a7;margin:0 0 18px}
+.tip{font-size:14px;color:#4b5563;margin:0 0 26px;background:#f8f9fc;border:1px solid #eef0f5;
+border-radius:12px;padding:14px 16px}
+.btn{display:inline-block;padding:11px 26px;border-radius:10px;background:#4c6ef5;color:#fff;text-decoration:none;font-weight:600}
+.btn:hover{background:#3b5bdb}
+@media(max-width:480px){.card{padding:32px 22px}h1{font-size:18px}}
+</style>
+</head>
+<body>
+<div class="card">
+<div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+<rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><path d="M12 15v2"/></svg></div>
+<h1>{$title}</h1>
+<p class="sub">该功能暂未开放</p>
+{$tipText}
+<a class="btn" href="{$home}">返回首页</a>
+</div>
+</body></html>
+HTML;
+        throw new HttpResponseException(new SymfonyResponse($html, 200, ['Content-Type' => 'text/html; charset=utf-8']));
+    }
+
+    /**
      * 文件输出。走 Symfony 的 BinaryFileResponse，大文件仍然是流式发送，
      * 不会整个读进内存。
      */

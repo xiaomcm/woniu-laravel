@@ -703,6 +703,11 @@ class ApiController extends Controller
     {
         $durationDays = (int) $package['duration_days'];
         $purchaseLimit = (int) ($package['purchase_limit'] ?? 0);
+        // 单文件/每日张数读套餐绑定用户组的配置（买后真正生效的值），
+        // 跟套餐页展示、上传校验保持同一份数据源。
+        $group = \App\Models\Group::find((int) ($package['group_id'] ?? 0));
+        $maxFileSize = $group === null ? 0 : (int) ($group['max_file_size'] ?? 0);
+        $dailyLimit = $group === null ? 0 : (int) ($group['daily_limit'] ?? 0);
 
         return [
             'id'             => (int) $package['id'],
@@ -719,8 +724,8 @@ class ApiController extends Controller
             'is_limit_purchase'   => $purchaseLimit > 0,
             'purchase_limit_text' => $purchaseLimit > 0 ? '限购 ' . $purchaseLimit . ' 次' : '不限',
             'capacity'       => (int) $package['capacity'],
-            'max_file_size'  => (int) $package['max_file_size'],
-            'daily_limit'    => (int) $package['daily_limit'],
+            'max_file_size'  => $maxFileSize,
+            'daily_limit'    => $dailyLimit,
             'features'       => $package['features_list'] ?? [],
         ];
     }

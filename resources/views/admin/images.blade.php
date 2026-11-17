@@ -26,8 +26,10 @@ $query = [
         </button>
     </form>
     <div class="spacer"></div>
-    <a class="btn btn-sm {!! $trashed ? '' : 'btn-ghost' !!}" href="{{ url('admin/images') }}">正常</a>
-    <a class="btn btn-sm {!! $trashed ? 'btn-ghost' : '' !!}" href="{{ url('admin/images?trashed=1') }}">回收站</a>
+    <div class="toolbar-switch">
+        <a class="btn btn-sm {!! $trashed ? '' : 'btn-ghost' !!}" href="{{ url('admin/images') }}">正常</a>
+        <a class="btn btn-sm {!! $trashed ? 'btn-ghost' : '' !!}" href="{{ url('admin/images?trashed=1') }}">回收站</a>
+    </div>
 </div>
 
 <div class="card">

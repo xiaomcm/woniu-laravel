@@ -47,11 +47,11 @@ class MobileToolbarAndNavContractTest extends TestCase
     {
         $css = (string) file_get_contents($this->root() . '/public/assets/app.css');
 
-        // 窄屏筛选栏用 grid：搜索框独占一行，下拉+按钮并排，不再五段竖堆
+        // 窄屏筛选栏用两列网格：搜索框独占一行，三个下拉两两并排，筛选按钮补最后一格
         $this->assertStringContainsString(
-            '.toolbar form { width: 100%; display: grid; grid-template-columns: 1fr auto;',
+            'display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));',
             $css,
-            '窄屏筛选栏没有改成 grid 布局'
+            '窄屏筛选栏没有改成两列 grid 布局'
         );
         $this->assertStringContainsString(
             '.toolbar form .input { grid-column: 1 / -1;',
@@ -59,15 +59,15 @@ class MobileToolbarAndNavContractTest extends TestCase
             '搜索框没有占满一行'
         );
         $this->assertStringContainsString(
-            '.toolbar form .select { grid-column: 1;',
+            '.toolbar-switch { display: flex; gap: 8px; width: 100%; }',
             $css,
-            '状态下拉没有和筛选按钮并排'
+            '正常/回收站没有包成并排容器'
         );
-        $this->assertStringContainsString(
-            '.toolbar form .btn { grid-column: 2;',
-            $css,
-            '筛选按钮没有和状态下拉并排'
-        );
+        // 前台和后台图片页都要用 toolbar-switch 包住切换按钮
+        foreach (['images.blade.php', 'admin/images.blade.php'] as $view) {
+            $code = (string) file_get_contents($this->root() . '/resources/views/' . $view);
+            $this->assertStringContainsString('class="toolbar-switch"', $code, "{$view} 没用 toolbar-switch");
+        }
     }
 
     public function test_backdrop_z_index_between_content_and_sidebar(): void

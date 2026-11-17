@@ -24,10 +24,18 @@ class ShopController extends Controller
     {
         Auth::requireAdmin();
 
+        $groups = Group::allRows();
+        // 每个组的权益预览，管理员绑定组时对照着看（买套餐后用户实际得到的就是这些）
+        $groupBenefits = [];
+        foreach ($groups as $group) {
+            $groupBenefits[(int) $group['id']] = Group::benefits($group);
+        }
+
         return $this->view('admin/packages', [
-            'pageTitle' => '套餐管理',
-            'packages'  => Package::allRows(),
-            'groups'    => Group::allRows(),
+            'pageTitle'     => '套餐管理',
+            'packages'      => Package::allRows(),
+            'groups'        => $groups,
+            'groupBenefits' => $groupBenefits,
             'orderStat' => [
                 'revenue' => Order::revenueCents(),
                 'paid'    => Order::countPaid(),
@@ -213,8 +221,10 @@ class ShopController extends Controller
             // 负数没有意义，按 0 处理。
             'duration_days' => max(0, Request::int('duration_days', 30)),
             'capacity'      => (int) round(((float) Request::input('capacity_mb', '0')) * 1024 * 1024),
-            'max_file_size' => (int) round(((float) Request::input('max_file_size_mb', '0')) * 1024 * 1024),
-            'daily_limit'   => max(0, Request::int('daily_limit', 0)),
+            // 单文件/每日张数不在套餐里配了（填了也不生效）—— 真正生效的是套餐绑定用户组的设置。
+            // 数据库列保留兼容旧安装，这里统一写 0，展示层一律读用户组。
+            'max_file_size' => 0,
+            'daily_limit'   => 0,
             // 每个用户可购买该套餐的次数上限，0 = 不限购（与「0 为不限」语义一致）
             'purchase_limit' => max(0, Request::int('purchase_limit', 0)),
             'description'   => mb_substr((string) Request::input('description', ''), 0, 480),

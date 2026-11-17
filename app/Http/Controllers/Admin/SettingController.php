@@ -25,6 +25,7 @@ class SettingController extends Controller
         // SEO：副标题、SEO 介绍、关键词
         'site_subtitle', 'site_seo_description', 'site_keywords',
         'register_invite', 'upload_allowed', 'upload_path_format',
+        'theme_dark_start', 'theme_dark_end',
         'watermark_type', 'watermark_text', 'watermark_position',
         'hotlink_domains', 'site_notice',
         'moderation_action', 'currency_symbol', 'mail_from', 'mail_from_name', 'sms_sign',
@@ -54,7 +55,7 @@ class SettingController extends Controller
         'explore_enabled', 'user_home_enabled', 'download_enabled', 'notice_enabled',
         'shop_enabled', 'ticket_enabled', 'report_enabled', 'feedback_enabled',
         'cloud_process_enabled', 'mail_enabled', 'sms_enabled', 'oauth_enabled',
-        'coupon_enabled', 'captcha_enabled',
+        'coupon_enabled', 'captcha_enabled', 'theme_auto_enabled',
     ];
 
     public function index(): HttpResponse
@@ -62,11 +63,16 @@ class SettingController extends Controller
         Auth::requireAdmin();
         $mailDriver = \App\Services\DriveService::mail();
         return $this->view('admin/settings', [
-            'pageTitle'     => '系统设置',
-            'settings'      => Setting::all(),
-            'groups'        => Group::allRows(),
-            'storages'      => StorageModel::allRows(),
+            'pageTitle'      => '系统设置',
+            'settings'       => Setting::all(),
+            'groups'         => Group::allRows(),
+            'storages'       => StorageModel::allRows(),
             'mailDriverName' => $mailDriver !== null ? $mailDriver->name() : '',
+            // 更新区块：当前版本 + 本地更新日志，随页面一起渲染，离线也能看历史
+            'currentVersion' => trim((string) \App\Core\Config::get('app.version', '')),
+            'changelog'      => self::parseChangelog(),
+            // 默认套餐下拉用（新用户注册自动绑定）
+            'allPackages'    => \App\Models\Package::allRows(),
         ], 'layouts/admin');
     }
 
@@ -92,7 +98,14 @@ class SettingController extends Controller
             $pairs[$key] = Request::bool($key, false) ? '1' : '0';
         }
 
-
+        // 夜间模式的两个时间点不规范就回落到默认值，免得前端解析出错
+        foreach (['theme_dark_start' => '22:00', 'theme_dark_end' => '07:00'] as $key => $default) {
+            $raw = trim((string) Request::input($key, ''));
+            if (!preg_match('/^([01]?\d|2[0-3]):[0-5]\d$/', $raw)) {
+                $raw = $default;
+            }
+            $pairs[$key] = $raw;
+        }
 
         $maxSizeMb = Request::input('upload_max_size_mb');
         if ($maxSizeMb !== null) {
@@ -166,5 +179,65 @@ class SettingController extends Controller
             null,
             $result->pass ? 200 : 400
         );
+    }
+
+    /**
+     * 系统设置页「检查更新」按钮走这个接口。
+     * 实时查 GitHub 最新版本（UpdateChecker 本身不缓存），再把本地 CHANGELOG
+     * 解析成版本列表一起回给前端 —— 日志跟着代码包走，离线也能看历史记录。
+     */
+    public function checkUpdate(): void
+    {
+        $this->validateCsrf();
+        Auth::requireAdmin();
+
+        $info = \App\Services\UpdateChecker::check();
+        $this->api(true, '', [
+            'current'    => (string) ($info['current'] ?? ''),
+            'latest'     => (string) ($info['latest'] ?? ''),
+            'has_update' => (bool) ($info['has_update'] ?? false),
+            'ok'         => (bool) ($info['ok'] ?? false),
+            'url'        => (string) ($info['url'] ?? ''),
+            'changelog'  => self::parseChangelog(),
+        ]);
+    }
+
+    /**
+     * 读 CHANGELOG.md 的版本块。默认只返回最新一条 —— 用户要「只保留最后一次更新的日志」，
+     * 设置页不堆历史版本。只做固定格式解析，不引 markdown 库；读不到返回空数组。
+     */
+    private static function parseChangelog(int $limit = 1): array
+    {
+        $file = BASE_PATH . '/CHANGELOG.md';
+        $raw = is_file($file) ? @file_get_contents($file) : false;
+        if ($raw === false || $raw === '') {
+            return [];
+        }
+        $lines = preg_split('/\R/u', $raw) ?: [];
+        $out = [];
+        $cur = null;
+        foreach ($lines as $line) {
+            $line = rtrim($line);
+            // 新版本标题：## v2.0.6 · 2026-11-17（日期可有可无）
+            if (preg_match('/^##\s+(v?\d[\d.]*)\s*(?:[·\-]\s*(.+))?$/u', $line, $m)) {
+                if ($cur !== null) {
+                    $out[] = $cur;
+                }
+                $cur = ['version' => trim($m[1]), 'date' => trim($m[2] ?? ''), 'items' => []];
+                continue;
+            }
+            // 该版本下的条目：- xxx（兼容 v2.0.6 那种一行里带字面 \n 的旧写法）
+            if ($cur !== null && preg_match('/^\s*[-*]\s+(.+)$/u', $line, $m)) {
+                $item = str_replace('\\n', ' ', trim($m[1]));
+                if ($item !== '') {
+                    $cur['items'][] = $item;
+                }
+            }
+        }
+        if ($cur !== null) {
+            $out[] = $cur;
+        }
+        // 只取最新 limit 条（CHANGELOG 是倒序的，前面就是最新的）
+        return array_slice($out, 0, max(1, $limit));
     }
 }

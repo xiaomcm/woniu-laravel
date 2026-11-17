@@ -11,6 +11,9 @@
         <h2>上传图片</h2>
         <div class="spacer"></div>
         <span class="badge">单张 ≤ {{ format_bytes($maxSize) }}</span>
+        @if ((int) ($maxNum ?? 0) > 0)
+            <span class="badge">单次 ≤ {!! (int) $maxNum !!} 张</span>
+        @endif
     </div>
     <div class="card-body">
         @include('partials.uploader')

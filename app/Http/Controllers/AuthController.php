@@ -17,9 +17,11 @@ use App\Core\Setting;
 use App\Core\Validator;
 use App\Models\Group;
 use App\Models\Log;
+use App\Models\Package;
 use App\Models\User;
 use App\Services\CaptchaService;
 use App\Services\CodeService;
+use App\Services\PaymentService;
 
 class AuthController extends Controller
 {
@@ -29,11 +31,14 @@ class AuthController extends Controller
             redirect('/dashboard');
         }
         $error = (string) Session::get('_login_error', '');
+        $ok = (string) Session::get('_login_ok', '');
         Session::forget('_login_error');
+        Session::forget('_login_ok');
         return $this->view('auth/login', [
             'pageTitle' => '登录',
             'redirect'  => $this->safeRedirect((string) Request::input('redirect', '')),
             'error'     => $error,
+            'ok'        => $ok,
         ], 'layouts/auth');
     }
 
@@ -66,13 +71,22 @@ class AuthController extends Controller
 
         $user = Auth::attempt($account, $password);
         if ($user === null) {
+            // 密码正确但账号被停用：给专门提示，不算进暴力破解锁定次数。
+            // 只有密码也正确才透露这个状态，避免泄露账号是否存在。
+            $candidate = User::findForLogin($account);
+            if ($candidate !== null
+                && password_verify($password, (string) $candidate['password'])
+                && (int) $candidate['status'] !== 1) {
+                Session::put('_login_error', '该账号已被停用，请联系管理员');
+                redirect('/login');
+            }
             $fails++;
             Session::put('_login_fails', $fails);
             if ($fails >= 5) {
                 Session::put('_login_lock', time() + 60);
                 Session::put('_login_fails', 0);
             }
-            Session::put('_login_error', '账号或密码错误，或账号已被禁用');
+            Session::put('_login_error', '账号或密码错误');
             redirect('/login');
         }
 
@@ -80,6 +94,103 @@ class AuthController extends Controller
         Auth::login($user);
         Log::record((int) $user['id'], 'login');
         redirect($redirect);
+    }
+
+    // ────────────── 找回密码（邮箱验证码）──────────────
+    // 用会话记住「哪个用户在重置」，验证码复用 CodeService（10 分钟有效、60 秒间隔、最多试 5 次）。
+    // 不建新表：重置是一次性短流程，会话足够，也避免动数据库结构。
+
+    public function forgotForm(): HttpResponse
+    {
+        if (Auth::check()) {
+            redirect('/dashboard');
+        }
+        return $this->view('auth/forgot', [
+            'pageTitle' => '找回密码',
+            'error'     => (string) Session::get('_forgot_error', ''),
+        ], 'layouts/auth');
+    }
+
+    /** 发送重置验证码。邮箱不存在时也回成功，避免被人枚举账号。 */
+    public function forgotSend(): void
+    {
+        $this->validateCsrf();
+        $email = strtolower(trim((string) Request::input('email', '')));
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            Response::json(['status' => false, 'message' => '请填写正确的邮箱'], 422);
+        }
+        if (!Setting::bool('mail_enabled', false)) {
+            Response::json(['status' => false, 'message' => '站点未开启邮件服务，请联系管理员'], 400);
+        }
+
+        $user = User::findByEmail($email);
+        if ($user !== null) {
+            // 会话先记下邮箱，CodeService 验证时也按这个邮箱核对，防止换码攻击
+            Session::put('_forgot_reset', ['email' => $email, 'user_id' => (int) $user['id']]);
+            $result = CodeService::send('mail', $email, 'forgot');
+            if (!$result->pass) {
+                Response::json(['status' => false, 'message' => $result->message], 429);
+            }
+        }
+        // 无论邮箱是否存在都回同样的提示
+        Response::json(['status' => true, 'message' => '如果该邮箱已注册，验证码已发送，请查收邮件']);
+    }
+
+    public function forgotResetForm(): HttpResponse
+    {
+        if (Auth::check()) {
+            redirect('/dashboard');
+        }
+        $reset = Session::get('_forgot_reset');
+        if (!is_array($reset) || trim((string) ($reset['email'] ?? '')) === '') {
+            Session::put('_forgot_error', '请先填写邮箱获取验证码');
+            redirect('/forgot');
+        }
+        return $this->view('auth/forgot-reset', [
+            'pageTitle' => '重置密码',
+            'email'     => (string) $reset['email'],
+            'error'     => (string) Session::get('_forgot_error', ''),
+        ], 'layouts/auth');
+    }
+
+    /** 校验验证码并重置密码 */
+    public function forgotReset(): void
+    {
+        $this->validateCsrf();
+        $reset = Session::get('_forgot_reset');
+        if (!is_array($reset) || trim((string) ($reset['email'] ?? '')) === '') {
+            Session::put('_forgot_error', '重置已失效，请重新获取验证码');
+            redirect('/forgot');
+        }
+        $email = (string) $reset['email'];
+        $code = trim((string) Request::input('code', ''));
+        $password = (string) Request::input('password', '');
+        $confirm = (string) Request::input('password_confirmation', '');
+
+        if (!CodeService::verify('mail', $email, 'forgot', $code)) {
+            Session::put('_forgot_error', '验证码不正确或已过期');
+            redirect('/forgot/reset');
+        }
+        if (mb_strlen($password) < 6) {
+            Session::put('_forgot_error', '新密码至少 6 位');
+            redirect('/forgot/reset');
+        }
+        if ($password !== $confirm) {
+            Session::put('_forgot_error', '两次输入的新密码不一致');
+            redirect('/forgot/reset');
+        }
+
+        $user = User::find((int) ($reset['user_id'] ?? 0));
+        if ($user === null || strcasecmp((string) $user['email'], $email) !== 0) {
+            Session::forget('_forgot_reset');
+            Session::put('_forgot_error', '账号信息已变化，请重新找回');
+            redirect('/forgot');
+        }
+        User::updateById((int) $user['id'], ['password' => $password]);
+        Session::forget('_forgot_reset');
+        Session::forget('_forgot_error');
+        Session::put('_login_ok', '密码已重置，请用新密码登录');
+        redirect('/login');
     }
 
     public function registerForm(): HttpResponse
@@ -221,12 +332,40 @@ class AuthController extends Controller
         }
         $userId = User::create($userData);
 
+        // 新用户注册自动绑定后台设置的默认套餐：
+        // 拿到套餐对应的用户组和容量，前台展示的权益买前买后一致。
+        self::applyDefaultPackage($userId);
+
         $user = User::find($userId);
         if ($user !== null) {
             Auth::login($user);
             Log::record($userId, 'register');
         }
         redirect('/dashboard');
+    }
+
+    /**
+     * 新用户注册后自动绑定后台指定的默认套餐。
+     * 套餐不存在、已下架、或后台把默认套餐设为 0/留空时，什么都不做，
+     * 用户保持注册时按 default_group_id 分的组，不受影响。
+     *
+     * 供本站注册和第三方登录新用户两个入口共用。
+     */
+    public static function applyDefaultPackage(int $userId): void
+    {
+        $packageId = Setting::int('default_package_id', 0);
+        if ($packageId <= 0) {
+            return;
+        }
+        $package = Package::find($packageId);
+        if ($package === null || (int) $package['status'] !== 1) {
+            return;
+        }
+        $user = User::find($userId);
+        if ($user === null) {
+            return;
+        }
+        PaymentService::grantPackage($user, $package, false);
     }
 
     public function logout(): void

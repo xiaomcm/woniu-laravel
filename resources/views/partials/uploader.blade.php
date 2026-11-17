@@ -6,6 +6,7 @@
  */
 
 $maxSize = $maxSize ?? 5242880;
+$maxNum  = (int) ($maxNum ?? 0);
 $allowed = $allowed ?? '';
 $albums = $albums ?? [];
 $storages = $storages ?? [];
@@ -14,6 +15,7 @@ $storages = $storages ?? [];
      data-endpoint="{{ url('upload') }}"
      data-token="{{ csrf_token() }}"
      data-max-size="{!! (int) $maxSize !!}"
+     data-max-num="{!! $maxNum !!}"
      data-allowed="{{ $allowed }}">
 
     <div class="dropzone" data-dropzone>
@@ -23,7 +25,8 @@ $storages = $storages ?? [];
         <div class="dz-title">点击选择、拖拽到此处，或直接 <kbd>Ctrl</kbd> + <kbd>V</kbd> 粘贴</div>
         <div class="dz-sub">
             支持 {{ $allowed !== '' ? $allowed : 'jpg,png,gif,webp' }}，
-            单张最大 {{ format_bytes($maxSize) }}，支持多选
+            单张最大 {{ format_bytes($maxSize) }}，
+            @if ($maxNum > 0)单次最多 {{ $maxNum }} 张@else支持多选@endif
         </div>
     </div>
     <input type="file" data-file-input multiple accept="image/*" hidden>

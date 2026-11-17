@@ -3,7 +3,7 @@
  * 蜗牛图床 WONIU
  * 作者 QQ：34995549
  *
- * 新版本检查：只读 GitHub 的最新版本号，在后台提示「发现新版本」。
+ * 新版本检查：每次打开后台都实时读 GitHub 最新版本号，只提示、不下发。
  * 不下发、不下载、不安装任何更新文件 —— 更新仍由站长手动覆盖（见 tools/update.php）。
  */
 declare(strict_types=1);
@@ -19,29 +19,20 @@ class UpdateChecker
     private const API = 'https://api.github.com/repos/xiaomcm/woniu-laravel/releases/latest';
     private const RELEASES = 'https://github.com/xiaomcm/woniu-laravel/releases';
 
-    private const CACHE_REL = '/storage/cache/update_check.json';
-    /** 查到结果后缓存 6 小时，避免每次开后台都打 GitHub */
-    private const TTL_OK = 21600;
-    /** 查失败（含国内连不上 GitHub）只缓存 15 分钟，避免反复卡后台 */
-    private const TTL_FAIL = 900;
-
     /**
+     * 实时检查：每次调用都去 GitHub 拉一次，不读缓存。
+     * 好处是发版后一打开后台立刻能看到提示，不用等缓存过期。
+     * 代价是每次开后台都会打一次 GitHub；连不上时靠 fetch() 的 4 秒短超时兜底并静默，
+     * 不会把后台卡住，也不会显示半成品提示。
+     *
      * 返回结构：
      *   ['has_update'=>bool, 'latest'=>string, 'current'=>string, 'url'=>string, 'ok'=>bool]
-     * ok=false 表示这次没查到（网络问题 / 接口异常），调用方应静默不显示。
+     * ok=false 表示这次没查到（网络问题 / 接口异常），调用方静默不显示。
      */
     public static function check(): array
     {
         $current = trim((string) Config::get('app.version', ''));
-        $cache = BASE_PATH . self::CACHE_REL;
-
-        $cached = self::readCache($cache);
-        if ($cached !== null && (time() - (int) ($cached['checked_at'] ?? 0)) < self::ttl($cached)) {
-            return self::decorate($cached, $current);
-        }
-
         $fresh = self::fetch();
-        self::writeCache($cache, $fresh);
         return self::decorate($fresh, $current);
     }
 
@@ -51,7 +42,7 @@ class UpdateChecker
         // 测试环境绝不连外网，避免测试变慢或依赖 GitHub 可用性
         try {
             if (\Illuminate\Support\Facades\App::environment('testing')) {
-                return ['checked_at' => time(), 'latest' => '', 'ok' => false];
+                return ['latest' => '', 'ok' => false];
             }
         } catch (\Throwable $e) {
             // 容器还没起来时按非测试环境处理，下面的请求自带超时不会挂住
@@ -66,28 +57,22 @@ class UpdateChecker
             $status = (int) ($res['status'] ?? 0);
             $body = trim((string) ($res['body'] ?? ''));
             if ($status < 200 || $status >= 300 || $body === '') {
-                return ['checked_at' => time(), 'latest' => '', 'ok' => false];
+                return ['latest' => '', 'ok' => false];
             }
             $data = json_decode($body, true);
             if (!is_array($data)) {
-                return ['checked_at' => time(), 'latest' => '', 'ok' => false];
+                return ['latest' => '', 'ok' => false];
             }
             // tag 形如 v2.0.4，去掉开头的 v 再比
             $tag = trim((string) ($data['tag_name'] ?? ''));
             $latest = ltrim($tag, 'vV');
             if ($latest === '' || !preg_match('/^\d+\.\d+\.\d+$/', $latest)) {
-                return ['checked_at' => time(), 'latest' => '', 'ok' => false];
+                return ['latest' => '', 'ok' => false];
             }
-            return ['checked_at' => time(), 'latest' => $latest, 'ok' => true];
+            return ['latest' => $latest, 'ok' => true];
         } catch (\Throwable $e) {
-            return ['checked_at' => time(), 'latest' => '', 'ok' => false];
+            return ['latest' => '', 'ok' => false];
         }
-    }
-
-    /** 根据缓存里的 ok 决定保留多久 */
-    private static function ttl(array $item): int
-    {
-        return !empty($item['ok']) ? self::TTL_OK : self::TTL_FAIL;
     }
 
     /** 拼出给视图用的结果，has_update 由版本号大小决定 */
@@ -102,32 +87,5 @@ class UpdateChecker
             'url'        => self::RELEASES,
             'ok'         => $ok,
         ];
-    }
-
-    private static function readCache(string $file): ?array
-    {
-        if (!is_file($file)) {
-            return null;
-        }
-        $raw = @file_get_contents($file);
-        if ($raw === false || $raw === '') {
-            return null;
-        }
-        $data = json_decode($raw, true);
-        return is_array($data) ? $data : null;
-    }
-
-    /** 先写临时文件再 rename，避免并发请求把缓存写成半截 JSON */
-    private static function writeCache(string $file, array $item): void
-    {
-        $dir = dirname($file);
-        if (!is_dir($dir) && !@mkdir($dir, 0775, true) && !is_dir($dir)) {
-            return;
-        }
-        $tmp = $file . '.tmp-' . getmypid();
-        if (@file_put_contents($tmp, json_encode($item, JSON_UNESCAPED_UNICODE), LOCK_EX) === false) {
-            return;
-        }
-        @rename($tmp, $file);
     }
 }

@@ -21,7 +21,7 @@ class ExploreController extends Controller
     public function index(): HttpResponse
     {
         if (!Setting::bool('explore_enabled', true)) {
-            abort(404, '图片广场未开启');
+            \App\Core\Response::featureDisabled('图片广场', '站主暂时关闭了图片广场，你可以先看看其他功能。');
         }
 
         $page = max(1, Request::int('page', 1));
@@ -51,7 +51,7 @@ class ExploreController extends Controller
     public function user(string $id): HttpResponse
     {
         if (!Setting::bool('user_home_enabled', true)) {
-            abort(404, '用户主页未开启');
+            \App\Core\Response::featureDisabled('用户主页', '站主暂时关闭了用户主页。');
         }
 
         $user = DB::fetch(

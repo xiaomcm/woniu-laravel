@@ -32,7 +32,7 @@ if ($footerPages === []) {
 }
 ?>
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" {!! theme_html_attrs() !!}>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -59,10 +59,12 @@ if ($footerPages === []) {
         <link rel="stylesheet" href="{{ asset('lightbox.css') }}">
     @endif
     <script>
-        /* 落地页以深空科技风为基准；用户手动切换过主题后仍尊重其选择 */
+        /* 落地页以深空科技风为基准；用户手动切换过主题后仍尊重其选择。
+           但后台开了定时自动切换时，不写死 dark，否则「没选过」会被当成「选过深色」，自动切换就失效。 */
         (function () {
             try {
-                if (localStorage.getItem('woniu_theme') === null) {
+                var auto = document.documentElement.getAttribute('data-theme-auto') === '1';
+                if (!auto && localStorage.getItem('woniu_theme') === null) {
                     localStorage.setItem('woniu_theme', 'dark');
                 }
             } catch (e) { /* 隐私模式下 localStorage 不可用，交给 CSS 默认深色 */ }

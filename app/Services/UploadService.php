@@ -140,7 +140,11 @@ class UploadService
         $quality = Setting::int('upload_quality', 92);
         $maxWidth = Setting::int('upload_max_width', 0);
 
-        if ($quality > 0 || $maxWidth > 0) {
+        // gif 可能是多帧动图，而 GD 的 imagecreatefromstring() 只读第一帧，
+        // 一旦重编码（优化/缩放/水印）就变成静态图。动图一律原样存，保证能播放。
+        $isAnimatedGif = $mime === 'image/gif';
+
+        if (!$isAnimatedGif && ($quality > 0 || $maxWidth > 0)) {
             $optimized = ImageProcessor::optimize($binary, $mime, $maxWidth, $quality > 0 ? $quality : 92);
             $binary = $optimized['binary'];
             $width  = $optimized['width'] > 0 ? $optimized['width'] : $width;
@@ -148,7 +152,7 @@ class UploadService
             $size   = strlen($binary);
         }
 
-        if (Setting::bool('watermark_enabled', false)) {
+        if (!$isAnimatedGif && Setting::bool('watermark_enabled', false)) {
             $binary = ImageProcessor::watermark($binary, $mime, [
                 'text'     => (string) Setting::get('watermark_text', ''),
                 'image'    => (string) Setting::get('watermark_image', ''),

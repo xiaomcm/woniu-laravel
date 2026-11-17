@@ -21,7 +21,7 @@ if ($me !== null) {
 $percent = $capacity > 0 ? min(100, round($usedBytes / $capacity * 100, 1)) : 0;
 ?>
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" {!! theme_html_attrs() !!}>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -63,7 +63,7 @@ $percent = $capacity > 0 ? min(100, round($usedBytes / $capacity * 100, 1)) : 0;
             </button>
         </div>
 
-        <div class="nav-label">图床</div>
+        <div class="nav-label nav-label-mobile-hide">图床</div>
         <a class="nav-item {!! $isUpload ? 'active' : '' !!}" href="{{ url('upload') }}">
             <svg class="ic"><use href="#i-upload"/></svg><span>上传图片</span>
         </a>

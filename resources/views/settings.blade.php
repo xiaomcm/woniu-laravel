@@ -51,12 +51,26 @@
     <div class="card-head"><h2>容量与用量</h2></div>
     <div class="card-body tight">
         <div class="kv"><span>用户组</span><span>{{ (string) ($group['name'] ?? '默认组') }}</span></div>
-        <div class="kv"><span>已用空间</span><span>{{ format_bytes((int) $stats['used']) }}</span></div>
+        <?php
+        $usedBytes = (int) $stats['used'];
+        $capBytes = (int) $stats['capacity'];
+        $percent = $capBytes > 0 ? min(100, (int) round($usedBytes / $capBytes * 100)) : 0;
+        ?>
         <div class="kv">
-            <span>总容量</span>
-            <span>{!! (int) $stats['capacity'] > 0 ? e(format_bytes((int) $stats['capacity'])) : '不限' !!}</span>
+            <span>存储空间</span>
+            <span>{!! $capBytes > 0
+                ? e(format_bytes($usedBytes)) . ' / ' . e(format_bytes($capBytes)) . '（' . $percent . '%）'
+                : e(format_bytes($usedBytes)) . ' / 不限' !!}</span>
+        </div>
+        <div class="quota-bar" style="margin:2px 0 8px">
+            {{-- 不限容量时也画一小段，直观表示「已用一些、但没有上限」 --}}
+            <span style="width: {!! $capBytes > 0 ? $percent . '%' : ($usedBytes > 0 ? '6%' : '0') !!}"></span>
         </div>
         <div class="kv"><span>图片数量</span><span>{!! (int) $stats['images'] !!} 张</span></div>
+        <div class="kv">
+            <span>单次上传</span>
+            <span>{!! (int) ($group['max_upload_num'] ?? 0) > 0 ? (int) $group['max_upload_num'] . ' 张' : '不限' !!}</span>
+        </div>
         <div class="kv">
             <span>单文件限制</span>
             <span>{{ format_bytes((int) ($group['max_file_size'] ?? 0) ?: \App\Core\Setting::int('upload_max_size', 0)) }}</span>

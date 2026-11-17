@@ -136,6 +136,15 @@ $dryRun   = flag('dry-run');
 $skipTest = flag('skip-tests');
 $resume   = flag('resume');   // 发版中途断了（比如推送失败）时，从推送这步接着做
 $notes    = (string) (argOf('notes') ?? '');
+// 中文说明走文件传，避免 Windows 命令行把 UTF-8 变成乱码
+$notesFile = argOf('notes-file');
+if ($notesFile !== null) {
+    $content = @file_get_contents($notesFile);
+    if ($content === false) {
+        fail("读不到说明文件: {$notesFile}");
+    }
+    $notes = trim($content);
+}
 $token    = (string) (getenv('GH_TOKEN') ?: '');
 $assetName = "woniu-laravel-v{$version}.zip";
 
@@ -254,8 +263,13 @@ if (!is_dir($distDir) && !$dryRun) {
 }
 $zipPath = $distDir . '/' . $assetName;
 
-$skipTree  = ['.git', 'node_modules', '.workbuddy', 'dist'];
-$skipFiles = ['.env', 'config/installed.php', 'storage/install.lock', '.phpunit.result.cache'];
+// tests/ 与测试配置属于本地开发文件，绝不能进用户安装包——
+// 用户要的是「解压即装」的干净程序，不是带着一堆契约测试的开发副本。
+$skipTree  = ['.git', 'node_modules', '.workbuddy', 'dist', 'tests'];
+$skipFiles = [
+    '.env', 'config/installed.php', 'storage/install.lock', '.phpunit.result.cache',
+    'phpunit.xml', 'phpunit.xml.dist', 'package.json', 'package-lock.json', '.phpunit.cache',
+];
 $onlyGitignore = ['storage', 'bootstrap/cache'];
 
 if (!$dryRun) {
@@ -301,15 +315,16 @@ if (!$dryRun) {
     }
     $zip->close();
 
-    // 兜底：包里不能有本地配置
+    // 兜底：包里不能有本地配置或开发/测试文件（双保险，防止以后改打包规则时漏掉）
     $check = new ZipArchive();
     $check->open($zipPath);
     for ($i = 0; $i < $check->numFiles; $i++) {
         $n = $check->getNameIndex($i);
-        if (preg_match('#woniu-laravel/(\.env$|config/installed\.php|storage/install\.lock|storage/[^/]*\.sqlite)#', $n)) {
+        // 注意锚定：vendor/ 里框架自带 package.json 是正常的，只拦项目根目录那几个
+        if (preg_match('#^woniu-laravel/(\.env$|config/installed\.php|storage/install\.lock|storage/[^/]*\.sqlite|tests/|phpunit\.xml(\.dist)?$|package(-lock)?\.json$|\.phpunit\.cache$)#', $n)) {
             $check->close();
             @unlink($zipPath);
-            fail("包里混进了本地文件: {$n}");
+            fail("包里混进了本地/测试文件: {$n}");
         }
     }
     $check->close();

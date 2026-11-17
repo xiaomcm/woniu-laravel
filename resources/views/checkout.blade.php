@@ -4,6 +4,9 @@
  * 作者 QQ：34995549
  * 官网：www.zhujitown.com
  */
+// 用户组权益读套餐绑定的组（买后真正生效的配置）
+$group = $groupLimits[(int) ($package['group_id'] ?? 0)]
+    ?? ['name' => '', 'max_file_size' => 0, 'daily_limit' => 0, 'benefits' => []];
 ?>
 <div class="explore-head">
     <div class="explore-head-main">
@@ -24,10 +27,20 @@
                     <div class="hint" style="margin-top:6px">{{ (string) ($package['description'] ?? '') }}</div>
                     <div class="kv-row" style="margin-top:12px"><span class="kv-key">有效期</span><span class="kv-val">{!! (int) $package['duration_days'] > 0 ? (int) $package['duration_days'] . ' 天' : '永久' !!}</span></div>
                     <div class="kv-row"><span class="kv-key">容量</span><span class="kv-val">{!! (int) $package['capacity'] > 0 ? e(format_bytes((int) $package['capacity'])) : '不限' !!}</span></div>
-                    <div class="kv-row"><span class="kv-key">单文件上限</span><span class="kv-val">{!! (int) $package['max_file_size'] > 0 ? e(format_bytes((int) $package['max_file_size'])) : '不限' !!}</span></div>
-                    <div class="kv-row"><span class="kv-key">每日上传</span><span class="kv-val">{!! (int) $package['daily_limit'] > 0 ? (int) $package['daily_limit'] . ' 张' : '不限' !!}</span></div>
+                    <div class="kv-row"><span class="kv-key">单文件上限</span><span class="kv-val">{!! (int) $group['max_file_size'] > 0 ? e(format_bytes((int) $group['max_file_size'])) : '不限' !!}</span></div>
+                    <div class="kv-row"><span class="kv-key">每日上传</span><span class="kv-val">{!! (int) $group['daily_limit'] > 0 ? (int) $group['daily_limit'] . ' 张' : '不限' !!}</span></div>
                     @if ((int) $limit > 0)
                         <div class="kv-row"><span class="kv-key">限购次数</span><span class="kv-val">每人 {!! (int) $limit !!} 次（已购买 {!! (int) $purchased !!} 次）</span></div>
+                    @endif
+                    @if ($group['name'] !== '' && count($group['benefits']) > 0)
+                        <div class="checkout-group-benefits">
+                            <div class="kv-key" style="margin:12px 0 6px">购买后升级「{{ $group['name'] }}」，享以下权益</div>
+                            <ul class="plan-features">
+                                @foreach ($group['benefits'] as $benefit)
+                                    <li>{{ $benefit }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
                     @endif
                 </div>
             </div>

@@ -27,11 +27,13 @@ class UserController extends Controller
         $result = User::paginate($keyword, $page, 20);
 
         return $this->view('admin/users', [
-            'pageTitle' => '用户管理',
-            'users'     => $result['items'],
-            'pager'     => $result,
-            'groups'    => Group::allRows(),
-            'keyword'   => $keyword,
+            'pageTitle'      => '用户管理',
+            'users'          => $result['items'],
+            'pager'          => $result,
+            'groups'         => Group::allRows(),
+            'keyword'        => $keyword,
+            // 视图据此隐藏默认管理员的删除/停用按钮（服务端仍会二次校验）
+            'defaultAdminId' => self::defaultAdminId(),
         ], 'layouts/admin');
     }
 
@@ -115,15 +117,27 @@ class UserController extends Controller
         if ($capacityMb !== null) {
             $data['capacity'] = $capacityMb === '' ? null : (int) ((float) $capacityMb * 1024 * 1024);
         }
+        $isDefaultAdmin = self::isDefaultAdmin((int) $id);
         if (Request::input('status') !== null) {
-            $data['status'] = Request::bool('status', true) ? 1 : 0;
+            $wantActive = Request::bool('status', true);
+            // 默认管理员不许停用，否则站点没人能进后台
+            if ($isDefaultAdmin && !$wantActive) {
+                flash('error', '默认管理员不能停用');
+                redirect('/admin/users');
+            }
+            $data['status'] = $wantActive ? 1 : 0;
         }
         if (Request::input('is_admin') !== null) {
-            if ((int) $user['id'] === (int) $admin['id'] && !Request::bool('is_admin', false)) {
+            $wantAdmin = Request::bool('is_admin', false);
+            if ((int) $user['id'] === (int) $admin['id'] && !$wantAdmin) {
                 flash('error', '不能取消自己的管理员权限');
                 redirect('/admin/users');
             }
-            $data['is_admin'] = Request::bool('is_admin', false) ? 1 : 0;
+            if ($isDefaultAdmin && !$wantAdmin) {
+                flash('error', '默认管理员不能取消管理员权限');
+                redirect('/admin/users');
+            }
+            $data['is_admin'] = $wantAdmin ? 1 : 0;
         }
 
         User::updateById((int) $id, $data);
@@ -139,8 +153,29 @@ class UserController extends Controller
             flash('error', '不能删除自己');
             redirect('/admin/users');
         }
+        // 默认管理员（安装时建的第一个管理员，即 id 最小的管理员）不许删，
+        // 否则站点会失去最后的后台入口。普通管理员可以删。
+        if (self::isDefaultAdmin((int) $id)) {
+            flash('error', '默认管理员不能删除');
+            redirect('/admin/users');
+        }
         User::deleteById((int) $id);
         flash('success', '用户已删除');
         redirect('/admin/users');
+    }
+
+    /** id 最小的管理员视为默认管理员，返回其 id；没有管理员返回 0 */
+    private static function defaultAdminId(): int
+    {
+        $row = \App\Core\Database::fetch(
+            'SELECT id FROM ' . \App\Core\Database::table('users') . ' WHERE is_admin = 1 ORDER BY id ASC LIMIT 1'
+        );
+        return $row === null ? 0 : (int) $row['id'];
+    }
+
+    private static function isDefaultAdmin(int $userId): bool
+    {
+        $id = self::defaultAdminId();
+        return $id > 0 && $id === $userId;
     }
 }

@@ -235,6 +235,29 @@ p { margin: 0; }
 .card-body { padding: 20px; }
 .card-body.tight { padding: 14px 20px; }
 
+/* 系统设置页底部的更新检查 + 更新日志 */
+.update-now { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 13px; color: var(--muted); }
+.update-ver { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--text); font-weight: 650; }
+.update-result { font-size: 13px; }
+.update-result a { color: var(--primary); font-weight: 600; text-decoration: none; }
+.update-result a:hover { text-decoration: underline; }
+.update-new a { color: #d97706; }
+.update-ok { color: #16a34a; }
+.update-warn { color: var(--muted); }
+.update-log-head {
+    margin: 18px 0 10px; padding-top: 16px; border-top: 1px solid var(--border);
+    font-size: 13px; font-weight: 650; color: var(--text);
+}
+.update-log { display: flex; flex-direction: column; gap: 16px; }
+.update-log-item { border-left: 2px solid var(--border-strong); padding-left: 14px; }
+.update-log-more { display: none; }
+.update-log-title { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.update-log-ver { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; font-weight: 650; color: var(--primary); }
+.update-log-date { font-size: 12px; color: var(--muted); }
+.update-log-items { margin: 6px 0 0; padding-left: 18px; font-size: 12.5px; line-height: 1.7; color: var(--muted); }
+.update-log-items li { margin: 2px 0; }
+.update-log-toggle { margin-top: 14px; }
+
 .btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 6px;
     height: 36px; padding: 0 14px; border-radius: var(--radius-sm);
@@ -645,12 +668,16 @@ pre.code-block code {
 
 @media (max-width: 860px) {
     .sidebar {
+        /* 窄屏抽屉再收窄：手机上别占大半屏，右边多留点内容 */
+        width: 180px;
         position: fixed; left: 0; top: 0; bottom: 0; height: 100vh;
         transform: translateX(-100%); transition: transform .22s ease;
         box-shadow: 0 0 40px rgba(0, 0, 0, .2);
         z-index: 60;
     }
     .sidebar.open { transform: none; }
+    /* 手机端隐藏前台侧栏的「图床」分组标题，菜单更紧凑（后台分组保留） */
+    .nav-label-mobile-hide { display: none; }
     /* 抽屉打开时盖一层半透明遮罩：点它就能关掉侧栏，不用去够被盖住的汉堡按钮 */
     .nav-backdrop {
         position: fixed; inset: 0; z-index: 50;
@@ -666,15 +693,19 @@ pre.code-block code {
     .topbar-title { max-width: 42vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .topbar .btn { padding: 0 10px; }
 
-    /* 筛选栏：搜索框独占一行，状态+筛选按钮并排一行，切换按钮并排一行 —— 不再五段竖着堆 */
+    /* 筛选栏：两列网格。搜索框独占一行，下面的下拉两两并排，筛选按钮补最后一格；
+       这样手机上是「搜索 / 相册+状态 / 排序+筛选 / 正常+回收站」四行，紧凑对称。 */
     .toolbar { flex-direction: column; align-items: stretch; gap: 8px; }
-    .toolbar form { width: 100%; display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+    .toolbar form {
+        width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
     .toolbar form .input { grid-column: 1 / -1; width: 100% !important; }
-    .toolbar form .select { grid-column: 1; width: 100% !important; min-width: 0; }
-    .toolbar form .btn { grid-column: 2; justify-content: center; align-self: end; }
-    .toolbar > .btn { justify-content: center; }
-    /* 末尾成对的切换按钮（正常/回收站之类）分两列并排 */
-    .toolbar > .btn:not(:first-of-type) { flex: 1 1 0; }
+    .toolbar form .select { width: 100% !important; min-width: 0; }
+    .toolbar form .btn { justify-content: center; }
+    /* 外层成对的切换按钮（正常/回收站）用 .toolbar-switch 包住，两列并排 */
+    .toolbar-switch { display: flex; gap: 8px; width: 100%; }
+    .toolbar-switch .btn { flex: 1 1 0; justify-content: center; }
     .toolbar .spacer { display: none; }
 
     .image-grid { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 10px; }
@@ -1077,6 +1108,18 @@ pre.code-block code {
     content: ""; flex: none; width: 15px; height: 15px; margin-top: 2px; border-radius: 50%;
     background: var(--success-soft) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2312a15a' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 13l4 4L19 7'/%3E%3C/svg%3E") center/9px no-repeat;
 }
+
+/* 套餐卡片里的「用户组权益」分区：买套餐后升级到哪个组、享有哪些权益 */
+.plan-group-benefits {
+    margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--border-strong);
+}
+.plan-group-title {
+    font-size: 12px; font-weight: 650; color: var(--primary); margin-bottom: 9px;
+}
+.plan-group-benefits .plan-features li { font-size: 12.5px; }
+.checkout-group-benefits { padding-top: 2px; }
+.checkout-group-benefits .plan-features { margin-top: 2px; }
+.checkout-group-benefits .plan-features li { font-size: 12.5px; }
 
 .checkout-grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 18px; align-items: start; }
 .pay-methods { display: flex; flex-direction: column; gap: 10px; }

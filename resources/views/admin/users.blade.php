@@ -28,6 +28,7 @@
                 </thead>
                 <tbody>
                 @foreach ($users as $user)
+                    <?php $isDefaultAdmin = (int) $user['id'] === (int) ($defaultAdminId ?? 0); ?>
                     <tr>
                         <td>{!! (int) $user['id'] !!}</td>
                         <td>
@@ -40,7 +41,9 @@
                         <td>{{ format_bytes(\App\Models\User::usedBytes((int) $user['id'])) }}</td>
                         <td>
                             <span class="badge {!! (int) $user['status'] === 1 ? 'badge-success' : 'badge-danger' !!}">
-                                {!! (int) $user['status'] === 1 ? '正常' : '禁用' !!}                            </span>
+                                {!! (int) $user['status'] === 1 ? '正常' : '已停用' !!}
+                                @if ($isDefaultAdmin) <span class="badge badge-primary">默认管理员</span>@endif
+                            </span>
                         </td>
                         <td style="white-space:nowrap">{{ (string) $user['created_at'] }}</td>
                         <td style="text-align:right;white-space:nowrap">
@@ -56,10 +59,21 @@
                                     data-fill-target="#user-edit-form"
                                     data-action="{{ url('admin/users/' . (int) $user['id']) }}"
                                     data-modal="#user-edit-modal">编辑</button>
-                            <form method="post" action="{{ url('admin/users/' . (int) $user['id'] . '/delete') }}"
-                                  data-confirm="确定删除用户「{{ (string) $user['name'] }}」？其图片记录会保留。" style="display:inline">
-                                {!! csrf_field() !!}                                <button class="btn btn-sm btn-danger" type="submit">删除</button>
-                            </form>
+                            @if (!$isDefaultAdmin)
+                                {{-- 一键停用/启用：只提交 status，走 update；默认管理员不给这个入口 --}}
+                                <form method="post" action="{{ url('admin/users/' . (int) $user['id']) }}"
+                                      data-confirm="{!! (int) $user['status'] === 1 ? '确定停用用户「' . e($user['name']) . '」？停用后该用户无法登录。' : '确定恢复用户「' . e($user['name']) . '」？' !!}" style="display:inline">
+                                    {!! csrf_field() !!}
+                                    <input type="hidden" name="status" value="{!! (int) $user['status'] === 1 ? '0' : '1' !!}">
+                                    <button class="btn btn-sm {!! (int) $user['status'] === 1 ? '' : 'btn-primary' !!}" type="submit">
+                                        {!! (int) $user['status'] === 1 ? '停用' : '启用' !!}
+                                    </button>
+                                </form>
+                                <form method="post" action="{{ url('admin/users/' . (int) $user['id'] . '/delete') }}"
+                                      data-confirm="确定删除用户「{{ (string) $user['name'] }}」？其图片记录会保留。" style="display:inline">
+                                    {!! csrf_field() !!}                                    <button class="btn btn-sm btn-danger" type="submit">删除</button>
+                                </form>
+                            @endif
                         </td>
                     </tr>
                 @endforeach

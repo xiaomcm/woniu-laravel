@@ -45,9 +45,20 @@ class UpdateCheckerContractTest extends TestCase
     {
         $code = $this->serviceFile();
         $this->assertStringContainsString('catch (\Throwable', $code);
-        // 失败要有短 TTL 缓存，避免连不上 GitHub 时每次开后台都卡
-        $this->assertStringContainsString('TTL_FAIL', $code);
         $this->assertStringContainsString('environment(\'testing\')', $code);
+    }
+
+    public function test_check_is_realtime_without_cache(): void
+    {
+        $code = $this->serviceFile();
+        // 用户要求实时检查：check() 每次都 fetch，不读任何缓存
+        $this->assertStringContainsString('$fresh = self::fetch();', $code);
+        // 缓存相关代码全部移除，发版后打开后台立刻能看到提示
+        $this->assertStringNotContainsString('readCache', $code);
+        $this->assertStringNotContainsString('writeCache', $code);
+        $this->assertStringNotContainsString('TTL_OK', $code);
+        $this->assertStringNotContainsString('TTL_FAIL', $code);
+        $this->assertStringNotContainsString('update_check.json', $code);
     }
 
     public function test_update_hint_is_only_in_admin_layout(): void
