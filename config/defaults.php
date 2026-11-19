@@ -17,7 +17,7 @@ return [
         'debug'     => true,
         'timezone'  => 'Asia/Shanghai',
         'locale'    => 'zh_CN',
-        'version'   => '2.0.7',
+        'version'   => '2.0.8',
     ],
 
     'db' => [
