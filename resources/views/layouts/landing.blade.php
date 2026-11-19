@@ -164,10 +164,10 @@ if ($footerPages === []) {
 
 {!! session_ttl_script() !!}
 @if ((string) setting('lightbox_enabled', '1') === '1')
-    <script src="{{ asset('lightbox.js') }}"></script>
+    <script src="{{ asset('lightbox.js') }}" defer></script>
 @endif
 @include('partials.notice_popup')
-<script src="{{ asset('app.js') }}"></script>
-<script src="{{ asset('landing.js') }}"></script>
+<script src="{{ asset('app.js') }}" defer></script>
+<script src="{{ asset('landing.js') }}" defer></script>
 </body>
 </html>

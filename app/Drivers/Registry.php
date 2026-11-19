@@ -35,6 +35,7 @@ use App\Drivers\Social\GenericOauth;
 use App\Drivers\Social\Github;
 use App\Drivers\Social\Qq;
 use App\Drivers\Social\Wechat;
+use App\Drivers\Social\Yaohuo;
 
 class Registry
 {
@@ -149,6 +150,15 @@ class Registry
                     'name'   => 'GitHub',
                     'class'  => Github::class,
                     'desc'   => 'GitHub OAuth 登录',
+                    'fields' => [
+                        ['key' => 'client_id', 'label' => 'Client ID', 'type' => 'text', 'required' => true],
+                        ['key' => 'client_secret', 'label' => 'Client Secret', 'type' => 'password', 'required' => true],
+                    ],
+                ],
+                'yaohuo' => [
+                    'name'   => '妖火账号',
+                    'class'  => Yaohuo::class,
+                    'desc'   => '妖火账号 OAuth2 登录，端点与字段已配好，只需填 Client ID / Secret',
                     'fields' => [
                         ['key' => 'client_id', 'label' => 'Client ID', 'type' => 'text', 'required' => true],
                         ['key' => 'client_secret', 'label' => 'Client Secret', 'type' => 'password', 'required' => true],

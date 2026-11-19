@@ -19,6 +19,7 @@ use App\Models\Group;
 use App\Models\Log;
 use App\Models\Package;
 use App\Models\User;
+use App\Models\Driver;
 use App\Services\CaptchaService;
 use App\Services\CodeService;
 use App\Services\PaymentService;
@@ -34,11 +35,22 @@ class AuthController extends Controller
         $ok = (string) Session::get('_login_ok', '');
         Session::forget('_login_error');
         Session::forget('_login_ok');
+        // 后台启用的社会化登录入口（妖火 / QQ / 微信 / GitHub 等），首屏直接渲染
+        $socials = [];
+        if (Setting::bool('oauth_enabled', true)) {
+            foreach (Driver::active('social') as $social) {
+                $socials[] = [
+                    'id'   => (int) $social['id'],
+                    'name' => (string) $social['name'],
+                ];
+            }
+        }
         return $this->view('auth/login', [
             'pageTitle' => '登录',
             'redirect'  => $this->safeRedirect((string) Request::input('redirect', '')),
             'error'     => $error,
             'ok'        => $ok,
+            'socials'   => $socials,
         ], 'layouts/auth');
     }
 
@@ -92,7 +104,12 @@ class AuthController extends Controller
 
         Session::forget('_login_fails'); Session::forget('_login_lock');
         Auth::login($user);
-        Log::record((int) $user['id'], 'login');
+        // 登录日志带上归属地和设备：地区查询失败会静默回落，不影响这次登录
+        $loginIp = \App\Core\Request::ip();
+        Log::record((int) $user['id'], 'login', '', [
+            'location' => \App\Services\LoginContext::location($loginIp),
+            'device'   => \App\Services\LoginContext::device(\App\Core\Request::ua()),
+        ]);
         redirect($redirect);
     }
 
@@ -246,6 +263,13 @@ class AuthController extends Controller
 
         if (!Setting::bool('register_enabled', true)) {
             Session::put('_register_error', '当前站点已关闭注册');
+            redirect('/register');
+        }
+
+        // 服务条款勾选：前端 required 只是提示，必须服务端再查一遍
+        if (Setting::bool('register_agree_terms', true)
+            && (string) Request::input('agree_terms', '') !== '1') {
+            Session::put('_register_error', '请先阅读并同意服务条款和隐私政策');
             redirect('/register');
         }
 

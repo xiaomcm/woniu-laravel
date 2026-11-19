@@ -234,6 +234,7 @@ POST /register/code
 POST /report
 POST /s/{key:slug}
 POST /settings/api-enabled
+POST /settings/email-code
 POST /settings/password
 POST /settings/profile
 POST /settings/tokens

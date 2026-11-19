@@ -20,7 +20,7 @@
     --radius: 14px;
     --radius-sm: 10px;
     --shadow: 0 1px 2px rgba(16, 24, 40, .05), 0 8px 24px -14px rgba(16, 24, 40, .18);
-    --sidebar-w: 248px;
+    --sidebar-w: 218px;
 }
 
 [data-theme="dark"] {
@@ -47,6 +47,15 @@
 * { box-sizing: border-box; }
 
 html, body { height: 100%; }
+
+/* 页面最右侧的滚动条：藏起来但滚动照常（滚轮、触摸、键盘都能用）。
+   注意：::-webkit-scrollbar 用 width:0 会连带把滚动一起禁掉，
+   所以改成保留滚动槽、只把滑块做成透明。 */
+html {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+html::-webkit-scrollbar { width: 0; height: 0; }
 
 body {
     margin: 0;
@@ -495,6 +504,12 @@ p { margin: 0; }
 .auth-foot { margin-top: 18px; text-align: center; font-size: 13px; color: var(--muted); }
 .auth-foot a { color: var(--primary); font-weight: 550; }
 
+/* 第三方登录入口：后台启用了社会化驱动才出现 */
+.social-login { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+.social-login-title { text-align: center; font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+.social-login-list { display: flex; flex-direction: column; gap: 8px; }
+.social-btn { text-decoration: none; }
+
 .toast-host { position: fixed; top: 18px; right: 18px; z-index: 999; display: grid; gap: 8px; }
 .toast {
     min-width: 220px; max-width: 380px; padding: 11px 14px; border-radius: 10px;
@@ -533,7 +548,19 @@ p { margin: 0; }
 .modal-head { display: flex; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border); }
 .modal-head h3 { font-size: 14px; }
 .modal-head .spacer { flex: 1; }
-.modal-body { padding: 20px; max-height: 64vh; overflow: auto; }
+/* 站内弹窗的滚动条不能跟着 html 一起藏掉（scrollbar-width 会继承），
+   否则手机上长表单看着只显示一半、又没有滚条可拖。 */
+.modal-body {
+    padding: 20px;
+    max-height: 64vh; overflow: auto;
+    scrollbar-width: thin;
+    -ms-overflow-style: auto;
+    /* 触屏上滚动跟手 */
+    -webkit-overflow-scrolling: touch;
+}
+.modal-body::-webkit-scrollbar { width: 6px; height: 6px; }
+.modal-body::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 99px; }
+.modal-body::-webkit-scrollbar-track { background: transparent; }
 .modal-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 14px 20px; border-top: 1px solid var(--border); background: var(--panel-2); }
 
 .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; }
@@ -601,9 +628,9 @@ pre.code-block code {
 
 /* 侧栏收起按钮：桌面端收成图标轨道，窄屏则当抽屉开关用 */
 .menu-btn { display: inline-flex; }
-/* 抽屉遮罩与侧栏关闭按钮：只在窄屏抽屉态出现，宽屏一律不显示 */
+/* 抽屉遮罩只在窄屏用；关闭按钮宽屏窄屏都显示（宽屏点了收成图标轨道） */
 .nav-backdrop { display: none; }
-.sidebar-close { display: none; }
+.sidebar-close { display: inline-flex; }
 
 /* 折叠态：248px → 68px，只留图标，悬停出文字浮层 */
 .sidebar {
@@ -635,6 +662,8 @@ pre.code-block code {
     .shell.sidebar-collapsed .sidebar::-webkit-scrollbar { width: 0; }
     .shell.sidebar-collapsed .brand { justify-content: center; padding: 4px 0 14px; }
     .shell.sidebar-collapsed .brand-name { display: none; }
+    /* 收成图标轨道后没有空间放关闭按钮，交给顶栏的展开按钮恢复 */
+    .shell.sidebar-collapsed .sidebar-close { display: none; }
 
     /* 分组标题收成一条分隔线，比直接留白更清楚 */
     .shell.sidebar-collapsed .nav-label {
@@ -1561,4 +1590,22 @@ a.thread-body.thread-link { display: block; }
     .land-float { display: none; }
     .land-window { transform: none; }
     .land-foot-inner { flex-direction: column; }
+}
+
+/* 触屏没有 hover：图片卡片的操作遮罩要常驻，否则灯箱按钮永远 opacity:0，
+   用户看不到「点图看大图」的入口，点了还容易被浏览器当成打开图片直链。 */
+@media (hover: none), (pointer: coarse) {
+    .image-card .image-overlay { opacity: 1; }
+    img[data-lightbox-src], a[data-lightbox-src] { cursor: pointer; }
+}
+
+/* 手机端编辑弹窗：竖屏 64vh 太矮，长表单看着像只显示一半。
+   弹窗本身留 12px 边距，表单区放开到 82vh，头尾固定、中间照常滚动。 */
+@media (max-width: 640px) {
+    .modal { padding: 12px; align-items: flex-start; }
+    .modal-box { max-width: 100%; margin-top: 6vh; }
+    .modal-body { max-height: 72vh; padding: 16px; }
+    .modal-head { padding: 13px 16px; }
+    .modal-foot { padding: 12px 16px; flex-wrap: wrap; }
+    .modal-foot .btn { flex: 1 1 auto; }
 }

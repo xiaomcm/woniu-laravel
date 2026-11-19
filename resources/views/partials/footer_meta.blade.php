@@ -17,7 +17,16 @@
  */
 $__fmBrand = trim((string) ($siteSettings['site_footer'] ?? ''));
 $__fmIcp   = trim((string) ($siteSettings['site_icp'] ?? ''));
-$__fmPages = $footerPages ?? [];
+// 页脚独立页面要全站都显示：布局没传就自己查一份。
+// site 布局仍可传入（它本来就查过），这里优先用传入的，避免重复查询。
+$__fmPages = $footerPages ?? null;
+if ($__fmPages === null) {
+    try {
+        $__fmPages = \App\Models\Page::footerPages();
+    } catch (\Throwable $e) {
+        $__fmPages = [];
+    }
+}
 $__fmHasPrev = false;
 ?>
 @if ($__fmBrand !== '')

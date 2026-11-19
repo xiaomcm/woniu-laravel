@@ -144,6 +144,14 @@
                 e.stopPropagation();
                 open(this);
             });
+            // 手机浏览器对 <a target="_blank"> 会在 click 之前就处理跳转，
+            // 光靠 click 里的 preventDefault 拦不住，会在 touchstart 阶段先截下来。
+            if (node.tagName === 'A') {
+                node.addEventListener('touchstart', function (e) {
+                    e.preventDefault();
+                    open(this);
+                }, { passive: false });
+            }
         }
     }
 

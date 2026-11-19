@@ -351,6 +351,9 @@ class SchemaDef
                     'action' => ['t' => 'string', 'len' => 64],
                     'ip' => ['t' => 'string', 'len' => 45, 'null' => true],
                     'ua' => ['t' => 'string', 'len' => 255, 'null' => true],
+                    // 登录日志用的归属地与设备简称（UA 原文仍存 ua 字段）
+                    'location' => ['t' => 'string', 'len' => 128, 'null' => true],
+                    'device'   => ['t' => 'string', 'len' => 128, 'null' => true],
                     'detail' => ['t' => 'text', 'null' => true],
                     'created_at' => ['t' => 'datetime', 'null' => true],
                 ],

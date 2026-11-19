@@ -13,6 +13,9 @@ use App\Core\Session;
 use App\Core\Auth;
 use App\Core\Request;
 use App\Core\Validator;
+use App\Core\Setting;
+use App\Core\Response;
+use App\Services\CodeService;
 use App\Models\Token;
 use App\Models\User;
 use App\Services\StatsService;
@@ -26,13 +29,51 @@ class SettingsController extends Controller
         $newToken = Session::get('_new_token');
         Session::forget('_new_token');
         return $this->view('settings', [
-            'pageTitle' => '个人设置',
-            'user'      => $user,
-            'group'     => User::group($user),
-            'stats'     => $stats,
-            'tokens'    => Token::allForUser((int) $user['id']),
-            'newToken'  => $newToken,
+            'pageTitle'  => '个人设置',
+            'user'       => $user,
+            'group'      => User::group($user),
+            'stats'      => $stats,
+            'tokens'     => Token::allForUser((int) $user['id']),
+            'newToken'   => $newToken,
+            // 站点总开关关着时，用户侧的 API 开关和令牌管理都要跟着停下
+            'siteApiOn'        => Setting::bool('api_enabled', true),
+            // 后台可控：改邮箱要不要邮箱验证码
+            'emailVerifyOn'    => Setting::bool('email_change_verify', true),
         ]);
+    }
+
+    /**
+     * 改邮箱时往「新邮箱」发验证码。会话记下目标和用户 id，
+     * 验证时按同一邮箱核对，防止拿 A 邮箱的码改到 B 邮箱。
+     */
+    public function sendEmailChangeCode(): void
+    {
+        $this->validateCsrf();
+        $user = Auth::requireLogin();
+        if (!Setting::bool('email_change_verify', true)) {
+            Response::json(['status' => false, 'message' => '当前无需邮箱验证'], 400);
+        }
+        if (!Setting::bool('mail_enabled', false)) {
+            Response::json(['status' => false, 'message' => '站点未开启邮件服务，请联系管理员'], 400);
+        }
+        $email = trim((string) Request::input('email', ''));
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            Response::json(['status' => false, 'message' => '请填写正确的邮箱'], 400);
+        }
+        if (mb_strtolower($email) === mb_strtolower((string) $user['email'])) {
+            Response::json(['status' => false, 'message' => '新邮箱和当前邮箱相同'], 400);
+        }
+        // 换绑前先验目标邮箱没被别人占用
+        $exists = User::findByEmail($email);
+        if ($exists !== null && (int) $exists['id'] !== (int) $user['id']) {
+            Response::json(['status' => false, 'message' => '该邮箱已被使用'], 400);
+        }
+        Session::put('_email_change', ['email' => $email, 'user_id' => (int) $user['id']]);
+        $result = CodeService::send('mail', $email, 'email_change');
+        if (!$result->pass) {
+            Response::json(['status' => false, 'message' => $result->message], 429);
+        }
+        Response::json(['status' => true, 'message' => '验证码已发到新邮箱，请查收']);
     }
 
     public function updateProfile(): void
@@ -54,9 +95,26 @@ class SettingsController extends Controller
             redirect('/settings');
         }
 
+        // 后台开了验证就必须填对新邮箱收到的码；关掉则保持原来的直接改
+        if (Setting::bool('email_change_verify', true)) {
+            $pending = Session::get('_email_change');
+            $code = trim((string) Request::input('email_code', ''));
+            if (!is_array($pending)
+                || (int) ($pending['user_id'] ?? 0) !== (int) $user['id']
+                || mb_strtolower((string) ($pending['email'] ?? '')) !== mb_strtolower($data['email'])) {
+                flash('error', '请先获取新邮箱的验证码');
+                redirect('/settings');
+            }
+            if ($code === '' || !CodeService::verify('mail', $data['email'], 'email_change', $code)) {
+                flash('error', '邮箱验证码不正确或已过期');
+                redirect('/settings');
+            }
+            Session::forget('_email_change');
+        }
+
         User::updateById((int) $user['id'], ['email' => $data['email']]);
         Auth::refresh();
-        flash('success', '资料已更新');
+        flash('success', '邮箱已更新');
         redirect('/settings');
     }
 
@@ -95,6 +153,11 @@ class SettingsController extends Controller
     {
         $this->validateCsrf();
         $user = Auth::requireLogin();
+        // 站主关了全站 API，用户不能再自己打开——否则开关看着是开的，调接口照样 403
+        if (!Setting::bool('api_enabled', true)) {
+            flash('error', '本站已关闭 API 接口，请联系站主');
+            redirect('/settings');
+        }
         $enabled = (string) Request::input('api_enabled', '0') === '1' ? 1 : 0;
         User::updateById((int) $user['id'], ['api_enabled' => $enabled]);
         Auth::refresh();
@@ -106,6 +169,10 @@ class SettingsController extends Controller
     {
         $this->validateCsrf();
         $user = Auth::requireLogin();
+        if (!Setting::bool('api_enabled', true)) {
+            flash('error', '本站已关闭 API 接口，无法创建令牌');
+            redirect('/settings');
+        }
         $name = trim((string) Request::input('name', ''));
         if ($name === '') {
             $name = 'API 令牌';

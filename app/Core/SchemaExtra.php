@@ -428,18 +428,13 @@ class SchemaExtra
             'sql' => 'INSERT INTO `' . $p . 'notices` (`title`,`content`,`level`,`pinned`,`status`,`expire_at`,`created_at`,`updated_at`) VALUES (?,?,?,?,?,?,?,?)',
             'args' => ['欢迎使用蜗牛图床', '上传遇到问题可以在工单里提交，工作日 24 小时内回复。', 'info', 1, 1, null, $now, $now],
         ];
-        $rows[] = [
-            'sql' => 'INSERT INTO `' . $p . 'pages` (`title`,`slug`,`content`,`status`,`sortable`,`show_in_footer`,`created_at`,`updated_at`) VALUES (?,?,?,?,?,?,?,?)',
-            'args' => ['关于我们', 'about', '<p>蜗牛图床提供稳定、快速、可扩展的图片托管服务。</p>', 1, 10, 1, $now, $now],
-        ];
-        $rows[] = [
-            'sql' => 'INSERT INTO `' . $p . 'pages` (`title`,`slug`,`content`,`status`,`sortable`,`show_in_footer`,`created_at`,`updated_at`) VALUES (?,?,?,?,?,?,?,?)',
-            'args' => ['服务条款', 'terms', '<p>上传内容需遵守所在地法律法规，禁止上传违法与侵权内容。</p>', 1, 20, 1, $now, $now],
-        ];
-        $rows[] = [
-            'sql' => 'INSERT INTO `' . $p . 'pages` (`title`,`slug`,`content`,`status`,`sortable`,`show_in_footer`,`created_at`,`updated_at`) VALUES (?,?,?,?,?,?,?,?)',
-            'args' => ['隐私政策', 'privacy', '<p>我们仅收集运行服务所必需的信息，不会向第三方出售用户数据。</p>', 1, 30, 1, $now, $now],
-        ];
+        // 三个说明页正文统一从 LegalPages 取，新装即为完整版
+        foreach (LegalPages::definitions() as $page) {
+            $rows[] = [
+                'sql' => 'INSERT INTO `' . $p . 'pages` (`title`,`slug`,`content`,`status`,`sortable`,`show_in_footer`,`created_at`,`updated_at`) VALUES (?,?,?,?,?,?,?,?)',
+                'args' => [$page['title'], $page['slug'], $page['content'], 1, $page['sortable'], 1, $now, $now],
+            ];
+        }
 
         return $rows;
     }

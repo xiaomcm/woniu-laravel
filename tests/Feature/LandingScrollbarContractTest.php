@@ -5,22 +5,43 @@ namespace Tests\Feature;
 use Tests\TestCase;
 
 /**
- * 落地页滚动条契约。
- * 落地页内容长（手机视口约 5600px），垂直滚动不可避免；
- * 用户嫌浏览器默认滚动条太粗，这里把样式收细、融进深色背景。
+ * 页面滚动条契约。
+ *
+ * 用户要求去掉最右侧那条滚动条（原先是嫌默认太粗，后来直接不要了）。
+ * 隐藏的是显示，滚动功能必须保留：滚轮、触摸滑动、键盘翻页照常。
  */
 class LandingScrollbarContractTest extends TestCase
 {
-    public function test_landing_uses_thin_scrollbar(): void
+    private function root(): string
     {
-        $css = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/landing.css');
-        // Firefox 标准属性 + Chromium 私有伪元素，两者都要有
-        $this->assertStringContainsString('scrollbar-width: thin', $css);
-        $this->assertStringContainsString('scrollbar-color:', $css);
-        $this->assertStringContainsString('::-webkit-scrollbar { width: 5px', $css);
-        $this->assertStringContainsString('::-webkit-scrollbar-thumb', $css);
-        $this->assertStringContainsString('::-webkit-scrollbar-track', $css);
-        // 横向仍然是隐藏的，避免光球溢出造成左右滑
+        return dirname(__DIR__, 2);
+    }
+
+    public function test_page_scrollbar_is_hidden_globally(): void
+    {
+        $css = (string) file_get_contents($this->root() . '/public/assets/app.css');
+        // Firefox 标准属性
+        $this->assertStringContainsString('scrollbar-width: none', $css);
+        // Chromium 私有伪元素
+        $this->assertStringContainsString('html::-webkit-scrollbar { width: 0; height: 0; }', $css);
+        $this->assertStringContainsString('-ms-overflow-style: none', $css);
+    }
+
+    public function test_landing_does_not_redraw_scrollbar(): void
+    {
+        // 落地页原先自己定义过蓝色细滚动条，会盖掉全局隐藏，这里不能有
+        $css = (string) file_get_contents($this->root() . '/public/assets/landing.css');
+        $this->assertStringNotContainsString('::-webkit-scrollbar-thumb', $css);
+        $this->assertStringNotContainsString('scrollbar-color:', $css);
+        // 横向滚动仍然要藏，避免光球溢出造成左右晃
         $this->assertStringContainsString('.lx-wrap { overflow-x: hidden;', $css);
+    }
+
+    public function test_scrolling_still_works(): void
+    {
+        // 隐藏滚动条不能顺手把 overflow 关掉，那会让页面滚不动
+        $css = (string) file_get_contents($this->root() . '/public/assets/app.css');
+        $this->assertStringNotContainsString('html { overflow: hidden', $css);
+        $this->assertStringNotContainsString('body { overflow: hidden', $css);
     }
 }

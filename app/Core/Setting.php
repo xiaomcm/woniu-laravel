@@ -38,6 +38,8 @@ class Setting
             'register_enabled' => '1',
             'register_invite'  => '',
             'register_email_verify' => '0',
+            // 注册时必须勾选同意服务条款（默认开）
+            'register_agree_terms' => '1',
             'default_group_id' => '1',
 
             // 夜间模式定时切换：默认关闭（尊重访客/system 偏好），开启后按时间自动深浅色
@@ -98,6 +100,8 @@ class Setting
 
             'hotlink_enabled'  => '0',
             'hotlink_domains'  => '',
+            // 改邮箱要不要验证码：默认要，关掉才退回无需验证的旧行为
+            'email_change_verify' => '1',
             'api_enabled'      => '1',
             'page_size'        => '24',
             // 账号自动退出：无操作多少秒后强制登出，0 为不限制，上限 1800 秒（30 分钟）

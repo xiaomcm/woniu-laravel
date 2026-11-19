@@ -24,7 +24,7 @@ class Log extends BaseModel
 
     use Concerns\ReturnsRows;
 
-    public static function record(?int $userId, string $action, string $detail = ''): void
+    public static function record(?int $userId, string $action, string $detail = '', array $extra = []): void
     {
         try {
             $model = new self();
@@ -33,6 +33,8 @@ class Log extends BaseModel
                 'action'     => $action,
                 'ip'         => Request::ip(),
                 'ua'         => Request::ua(),
+                'location'   => (string) ($extra['location'] ?? ''),
+                'device'     => (string) ($extra['device'] ?? ''),
                 'detail'     => $detail,
                 'created_at' => now(),
             ]);
@@ -60,7 +62,7 @@ class Log extends BaseModel
 
         $keyword = trim((string) ($filters['keyword'] ?? ''));
         if ($keyword !== '') {
-            $where[] = '(l.action LIKE :kw OR l.detail LIKE :kw OR l.ip LIKE :kw)';
+            $where[] = '(l.action LIKE :kw OR l.detail LIKE :kw OR l.ip LIKE :kw OR l.location LIKE :kw OR l.device LIKE :kw)';
             $params['kw'] = '%' . $keyword . '%';
         }
         $action = trim((string) ($filters['action'] ?? ''));

@@ -31,9 +31,18 @@
     <button class="btn btn-primary btn-block" type="submit" style="height:42px;margin-top:6px">登录</button>
 </form>
 
-<div class="auth-foot" style="justify-content:space-between">
+@if (count($socials ?? []) > 0)
+    <div class="social-login">
+        <div class="social-login-title">第三方账号登录</div>
+        <div class="social-login-list">
+            @foreach ($socials as $social)
+                <a class="btn btn-block social-btn" href="{{ url('oauth/' . (int) $social['id']) }}">{{ (string) $social['name'] }}</a>
+            @endforeach
+        </div>
+    </div>
+@endif
+
+<div class="auth-foot">
     <a href="{{ url('forgot') }}">忘记密码？</a>
-    @if (\App\Core\Setting::bool('register_enabled', true))
-        <span>还没有账号？<a href="{{ url('register') }}">立即注册</a></span>
-    @endif
+    <span class="dot">·</span><a href="{{ url('register') }}">注册账号</a>
 </div>

@@ -87,10 +87,24 @@ class UpdateSectionContractTest extends TestCase
     public function test_narrow_screen_sidebar_is_narrower(): void
     {
         $css = (string) file_get_contents($this->root() . '/public/assets/app.css');
-        // 窄屏抽屉收窄到 180px（桌面仍是 --sidebar-w: 248px）
-        $this->assertStringContainsString('--sidebar-w: 248px', $css);
+        // 桌面侧栏收窄到 218px，窄屏抽屉 180px
+        $this->assertStringContainsString('--sidebar-w: 218px', $css);
         $this->assertStringContainsString('width: 180px', $css);
+        $this->assertStringNotContainsString('--sidebar-w: 248px', $css);
         $this->assertStringNotContainsString('width: 216px', $css);
+    }
+
+    public function test_desktop_sidebar_close_button_works(): void
+    {
+        // 桌面端也要能看到关闭 X，且点了能收成图标轨道（不再只处理抽屉）
+        $css = (string) file_get_contents($this->root() . '/public/assets/app.css');
+        $this->assertStringContainsString('.sidebar-close { display: inline-flex; }', $css);
+        $this->assertStringContainsString('.shell.sidebar-collapsed .sidebar-close { display: none; }', $css);
+        $js = (string) file_get_contents($this->root() . '/public/assets/app.js');
+        $this->assertStringContainsString('if (WIDE.matches) {', $js);
+        $this->assertStringContainsString("localStorage.setItem(SIDEBAR_KEY, 'collapsed');", $js);
+        // Esc 只关窄屏抽屉，不该收起桌面常驻侧栏
+        $this->assertStringContainsString("e.key === 'Escape' && !WIDE.matches", $js);
     }
 
     public function test_mobile_hides_front_sidebar_group_label(): void

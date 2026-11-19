@@ -12,7 +12,7 @@ use PDO;
 
 class Migrator
 {
-    private const VERSION = 9;
+    private const VERSION = 11;
 
     private const TARGET = [
         'images' => [
@@ -47,6 +47,11 @@ class Migrator
         'packages' => [
             // 每个用户可购买该套餐的次数上限，0 = 不限购
             'purchase_limit' => ['sqlite' => 'INTEGER NOT NULL DEFAULT 0', 'mysql' => 'INT NOT NULL DEFAULT 0'],
+        ],
+        'logs' => [
+            // 登录日志的归属地与设备简称
+            'location' => ['sqlite' => 'VARCHAR(128) NULL', 'mysql' => 'VARCHAR(128) NULL DEFAULT NULL'],
+            'device'   => ['sqlite' => 'VARCHAR(128) NULL', 'mysql' => 'VARCHAR(128) NULL DEFAULT NULL'],
         ],
     ];
 
@@ -154,6 +159,7 @@ class Migrator
 
         self::seedIfEmpty($pdo, $prefix, $driver);
         self::linkPivot($pdo, $prefix);
+        self::upgradeLegalPages($pdo, $prefix);
 
         // settings 的主键就是 key，没有自增 id，先查后写才能保证版本号真正落库
         try {
@@ -173,6 +179,34 @@ class Migrator
             }
             Setting::set('schema_version', (string) self::VERSION);
         } catch (\Throwable $e) {
+        }
+    }
+
+    /**
+     * 老站点的三个说明页正文还是一句话占位，升级到完整的关于/条款/隐私。
+     * 只动内容仍是旧占位的那几页——站主自己改过的正文一律保留。
+     */
+    private static function upgradeLegalPages(PDO $pdo, string $prefix): void
+    {
+        $table = Database::table('pages');
+        foreach (LegalPages::definitions() as $page) {
+            try {
+                $row = Database::fetch(
+                    'SELECT `id`,`content` FROM ' . $table . ' WHERE `slug` = :s LIMIT 1',
+                    ['s' => $page['slug']]
+                );
+                if ($row === null || !LegalPages::isPlaceholder($page['slug'], (string) $row['content'])) {
+                    continue;
+                }
+                Database::update(
+                    'pages',
+                    ['content' => $page['content']],
+                    '`id` = :id',
+                    ['id' => (int) $row['id']]
+                );
+            } catch (\Throwable $e) {
+                // 升级失败不阻断请求，下次还会重试
+            }
         }
     }
 

@@ -76,7 +76,7 @@ $queryBase = $query ?? [];
     <div class="toolbar">
         <form method="get" action="{{ url('admin/logs') }}" class="toolbar" style="margin:0;flex-wrap:wrap">
             <input class="input" name="keyword" value="{{ (string) $filters['keyword'] }}"
-                   placeholder="动作 / 详情 / IP" style="height:34px;width:180px">
+                   placeholder="动作 / 详情 / IP / 地区 / 设备" style="height:34px;width:180px">
             <select class="select" name="action" style="height:34px;width:auto">
                 <option value="">全部动作</option>
                 @foreach ($actions as $row)
@@ -127,7 +127,7 @@ $queryBase = $query ?? [];
                             <th style="width:36px">
                                 <input type="checkbox" data-check-all>
                             </th>
-                            <th>时间</th><th>用户</th><th>动作</th><th>IP</th><th>详情</th>
+                            <th>时间</th><th>用户</th><th>动作</th><th>地区 / IP / 设备</th><th>详情</th>
                             <th style="text-align:right">操作</th>
                         </tr>
                         </thead>
@@ -141,7 +141,13 @@ $queryBase = $query ?? [];
                                 <td style="white-space:nowrap;font-size:12.5px">{{ (string) $log['created_at'] }}</td>
                                 <td>{{ (string) ($log['user_name'] ?? '游客') }}</td>
                                 <td><span class="badge">{{ (string) $log['action'] }}</span></td>
-                                <td style="font-size:12.5px;color:var(--muted)">{{ (string) $log['ip'] }}</td>
+                                <td style="font-size:12.5px;color:var(--muted);line-height:1.5;white-space:nowrap">
+                                    <div>{{ (string) ($log['location'] ?? '') ?: '未知地区' }}</div>
+                                    <div>{{ (string) $log['ip'] }}</div>
+                                    @if ((string) ($log['device'] ?? '') !== '')
+                                        <div style="font-size:11.5px">{{ (string) $log['device'] }}</div>
+                                    @endif
+                                </td>
                                 <td style="font-size:12.5px;color:var(--muted);max-width:320px">
                                     {{ str_limit((string) ($log['detail'] ?? ''), 80) }}                                </td>
                                 <td style="text-align:right">

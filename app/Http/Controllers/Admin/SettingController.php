@@ -49,7 +49,7 @@ class SettingController extends Controller
     ];
 
     private const BOOL_KEYS = [
-        'register_enabled', 'register_email_verify', 'review_enabled', 'guest_upload', 'upload_dedupe',
+        'register_enabled', 'register_email_verify', 'register_agree_terms', 'email_change_verify', 'review_enabled', 'guest_upload', 'upload_dedupe',
         'thumb_enabled', 'lightbox_enabled', 'watermark_enabled', 'hotlink_enabled', 'api_enabled',
         'lazy_load_enabled',
         'explore_enabled', 'user_home_enabled', 'download_enabled', 'notice_enabled',

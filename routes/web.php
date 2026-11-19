@@ -104,6 +104,7 @@ Route::get('/s/{key}', [AlbumController::class, 'share'])->where('key', '[A-Za-z
 Route::post('/s/{key}', [AlbumController::class, 'unlockShare'])->where('key', '[A-Za-z0-9_\-]+');
 
 Route::get('/settings', [SettingsController::class, 'index']);
+Route::post('/settings/email-code', [SettingsController::class, 'sendEmailChangeCode']);
 Route::post('/settings/profile', [SettingsController::class, 'updateProfile']);
 Route::post('/settings/password', [SettingsController::class, 'updatePassword']);
 Route::post('/settings/api-enabled', [SettingsController::class, 'updateApiEnabled']);

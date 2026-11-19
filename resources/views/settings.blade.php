@@ -18,7 +18,14 @@
                 </div>
                 <div class="field">
                     <label class="label">邮箱</label>
-                    <input class="input" type="email" name="email" value="{{ (string) $user['email'] }}" required>
+                    <input class="input" type="email" name="email" id="profile-email" value="{{ (string) $user['email'] }}" required>
+                    @if (($emailVerifyOn ?? true))
+                        <p class="hint" style="margin:6px 0 8px">改邮箱需验证新邮箱：填好新地址后点「获取验证码」，收到后填入下面。</p>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap">
+                            <input class="input" type="text" name="email_code" id="email-code" inputmode="numeric" maxlength="6" placeholder="6 位邮箱验证码" autocomplete="one-time-code" style="flex:1;min-width:140px">
+                            <button class="btn btn-sm" type="button" id="send-email-code">获取验证码</button>
+                        </div>
+                    @endif
                 </div>
                 <button class="btn btn-primary" type="submit">保存资料</button>
             </form>
@@ -71,9 +78,12 @@
             <span>单次上传</span>
             <span>{!! (int) ($group['max_upload_num'] ?? 0) > 0 ? (int) $group['max_upload_num'] . ' 张' : '不限' !!}</span>
         </div>
+        <?php $groupMaxFile = (int) ($group['max_file_size'] ?? 0); ?>
         <div class="kv">
-            <span>单文件限制</span>
-            <span>{{ format_bytes((int) ($group['max_file_size'] ?? 0) ?: \App\Core\Setting::int('upload_max_size', 0)) }}</span>
+            <span>用户组单文件上限</span>
+            <span>{!! $groupMaxFile > 0
+                ? e(format_bytes($groupMaxFile))
+                : e(format_bytes(\App\Core\Setting::int('upload_max_size', 0))) . '（跟随站点）' !!}</span>
         </div>
         <div class="kv"><span>允许格式</span><span>{{ (string) ($group['allowed_extensions'] ?? '') }}</span></div>
     </div>
@@ -83,7 +93,7 @@
     <div class="card-head">
         <h2>API 令牌</h2>
         <div class="spacer"></div>
-        <button class="btn btn-sm btn-primary" type="button" data-modal-open="#token-modal">
+        <button class="btn btn-sm btn-primary" type="button" data-modal-open="#token-modal" {!! !($siteApiOn ?? true) ? 'disabled title="本站已关闭 API"' : '' !!}>
             <svg class="ic" style="width:15px;height:15px"><use href="#i-plus"/></svg> 新建令牌
         </button>
     </div>
@@ -96,14 +106,20 @@
             </div>
         @endif
 
-        {{-- 用户自己的 API 总开关：关掉后令牌保留但全部调不通，重新打开即恢复 --}}
+        {{-- 用户自己的 API 总开关：站主关了全站 API 时整个区域禁用，避免"开关能开但调不通" --}}
+        @if (!($siteApiOn ?? true))
+            <div class="alert alert-warn" style="margin-bottom:14px">
+                本站已由站主关闭 API 接口，暂时无法启用或创建令牌。
+                <a href="{{ url('api-docs') }}">了解详情</a>
+            </div>
+        @endif
         <form method="post" action="{{ url('settings/api-enabled') }}" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding-bottom:14px;border-bottom:1px solid var(--line)">
             {!! csrf_field() !!}
-            <label class="switch">
-                <input type="checkbox" name="api_enabled" value="1" onchange="this.form.submit()" {!! (int) ($user['api_enabled'] ?? 1) === 1 ? 'checked' : '' !!}>
+            <label class="switch" {!! !($siteApiOn ?? true) ? 'style="opacity:.5;pointer-events:none"' : '' !!}>
+                <input type="checkbox" name="api_enabled" value="1" onchange="this.form.submit()" {!! (int) ($user['api_enabled'] ?? 1) === 1 ? 'checked' : '' !!} {!! !($siteApiOn ?? true) ? 'disabled' : '' !!}>
                 <span class="track"></span><span>启用我的 API 接口</span>
             </label>
-            <span class="hint">关闭后本账号所有令牌立即停用，令牌不会删除，重新打开即可恢复</span>
+            <span class="hint">{{ ($siteApiOn ?? true) ? '关闭后本账号所有令牌立即停用，令牌不会删除，重新打开即可恢复' : '站主已关闭本站 API，开关暂时不可用' }}</span>
             <a class="btn btn-sm" href="{{ url('api-docs') }}" style="margin-left:auto">查看 API 用法</a>
         </form>
 
@@ -178,3 +194,5 @@
         </div>
     </form>
 </div>
+
+@include("partials.email_code_js")

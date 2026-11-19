@@ -265,10 +265,23 @@ $zipPath = $distDir . '/' . $assetName;
 
 // tests/ 与测试配置属于本地开发文件，绝不能进用户安装包——
 // 用户要的是「解压即装」的干净程序，不是带着一堆契约测试的开发副本。
-$skipTree  = ['.git', 'node_modules', '.workbuddy', 'dist', 'tests'];
+$skipTree  = ['.git', 'node_modules', '.workbuddy', 'dist', 'tests',
+              'database/factories', 'database/seeders'];
 $skipFiles = [
     '.env', 'config/installed.php', 'storage/install.lock', '.phpunit.result.cache',
     'phpunit.xml', 'phpunit.xml.dist', 'package.json', 'package-lock.json', '.phpunit.cache',
+    // 本地开发测试脚本（服务器上已清掉，发布的干净包也不该带）
+    '.htaccess', '404.html',
+    'tools/local_server.sh',
+    'tools/block_gap_test.cjs', 'tools/card_gap_test.cjs', 'tools/footer_check.cjs',
+    'tools/landing_overlap_test.cjs', 'tools/lightbox_click_test.cjs', 'tools/lightbox_test.cjs',
+    'tools/local_smoke.cjs', 'tools/op_btn_test.cjs', 'tools/settings_gap_test.cjs',
+    'tools/shot.cjs', 'tools/user_menu_center_test.cjs', 'tools/user_menu_width_test.cjs',
+    'tools/verify_account_label.php', 'tools/verify_admin_title.php',
+    'tools/verify_homepage_isolation.php', 'tools/verify_lazy_load.php',
+    'tools/verify_package_duration.php', 'tools/verify_purchase_limit.php',
+    'tools/probe_home_normal.php', 'tools/probe_home_state.php',
+    'database/factories/UserFactory.php', 'database/seeders/DatabaseSeeder.php',
 ];
 $onlyGitignore = ['storage', 'bootstrap/cache'];
 
@@ -321,7 +334,7 @@ if (!$dryRun) {
     for ($i = 0; $i < $check->numFiles; $i++) {
         $n = $check->getNameIndex($i);
         // 注意锚定：vendor/ 里框架自带 package.json 是正常的，只拦项目根目录那几个
-        if (preg_match('#^woniu-laravel/(\.env$|config/installed\.php|storage/install\.lock|storage/[^/]*\.sqlite|tests/|phpunit\.xml(\.dist)?$|package(-lock)?\.json$|\.phpunit\.cache$)#', $n)) {
+        if (preg_match('#^woniu-laravel/(\.env$|config/installed\.php|storage/install\.lock|storage/[^/]*\.sqlite|tests/|database/(factories|seeders)/|phpunit\.xml(\.dist)?$|package(-lock)?\.json$|\.phpunit\.cache$|tools/.*(test\.cjs|local_server\.sh|probe_home_|verify_))#', $n)) {
             $check->close();
             @unlink($zipPath);
             fail("包里混进了本地/测试文件: {$n}");

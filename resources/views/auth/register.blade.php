@@ -228,6 +228,15 @@ $js = static fn ($v): string => (string) json_encode(
             </div>
         @endif
 
+        @if ((string) \App\Core\Setting::get('register_agree_terms', '1') === '1')
+            <div class="field">
+                <label style="display:flex;align-items:flex-start;gap:8px;font-size:13px;line-height:1.6;cursor:pointer">
+                    <input type="checkbox" name="agree_terms" value="1" required style="margin-top:3px;flex:none">
+                    <span>我已阅读并同意 <a href="{{ url('p/terms') }}" target="_blank" rel="noopener">《服务条款》</a> 和 <a href="{{ url('p/privacy') }}" target="_blank" rel="noopener">《隐私政策》</a></span>
+                </label>
+            </div>
+        @endif
+
         <button class="btn btn-primary btn-block" type="submit" style="height:42px;margin-top:6px">注册</button>
     </form>
 

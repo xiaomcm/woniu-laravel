@@ -36,6 +36,8 @@ class RouteContractTest extends TestCase
         // API 功能：个人开关 + 用法文档页
         'POST /settings/api-enabled',
         'GET /api-docs',
+        // 改邮箱验证码（后台可控）
+        'POST /settings/email-code',
         // 图片直链短地址（不带 uploads 前缀）
         'GET /{path}',
     ];

@@ -131,9 +131,9 @@
         }
     });
 
-    // Esc 也能关抽屉
+    // Esc 关抽屉（宽屏侧栏常驻，Esc 不该把侧栏收起来）
     document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') { closeSidebar(); }
+        if (e.key === 'Escape' && !WIDE.matches) { closeSidebar(); }
     });
 
     /* 侧栏两种形态：宽屏收成 68px 图标轨道，窄屏当抽屉开关用
@@ -183,6 +183,16 @@
 
     function closeSidebar() {
         const sidebar = document.querySelector('.sidebar');
+        // 宽屏：X 按钮收成 68px 图标轨道（和顶栏的收起按钮同一套状态）
+        if (WIDE.matches) {
+            const shell = document.querySelector('.shell');
+            if (shell && !shell.classList.contains('sidebar-collapsed')) {
+                localStorage.setItem(SIDEBAR_KEY, 'collapsed');
+                applySidebar(true);
+            }
+            return;
+        }
+        // 窄屏：关抽屉、撤遮罩
         if (sidebar && sidebar.classList.contains('open')) {
             sidebar.classList.remove('open');
             syncNavBackdrop(false);

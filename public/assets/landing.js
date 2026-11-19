@@ -11,9 +11,15 @@
     function initCanvas() {
         var cv = document.getElementById('lx-canvas');
         if (!cv || reduce) return;
+        // 手机端不开：70 个点两两连线约 4900 次/帧，滚动时直接跟手机抢 CPU。
+        // 判断放宽：触屏点数 > 0 或指针是 coarse 都算手机，只靠 media 查询在部分浏览器上不生效。
+        var touch = (navigator.maxTouchPoints || 0) > 0
+            || (window.matchMedia && window.matchMedia('(hover: none) and (pointer: coarse)').matches)
+            || (window.matchMedia && window.matchMedia('(max-width: 768px)').matches);
+        if (touch) { cv.style.display = 'none'; return; }
         var ctx = cv.getContext('2d');
         var dpr = Math.min(window.devicePixelRatio || 1, 2);
-        var w, h, pts, raf, hover = false;
+        var w, h, pts, raf = null, hover = false;
         var COLORS = ['rgba(91,140,255,', 'rgba(52,231,228,', 'rgba(168,116,255,'];
 
         function size() {
@@ -62,8 +68,24 @@
             raf = requestAnimationFrame(frame);
         }
 
+        function start() { if (raf === null) { raf = requestAnimationFrame(frame); } }
+        function stop() { if (raf !== null) { cancelAnimationFrame(raf); raf = null; } }
+
         size();
-        frame();
+        start();
+
+        // 页面不可见时停掉，别在后台空跑
+        document.addEventListener('visibilitychange', function () {
+            if (document.hidden) { stop(); } else { start(); }
+        });
+        // 滚动时也停：滚动是用户最在意跟手的时候，别让粒子抢帧
+        var scrollT;
+        window.addEventListener('scroll', function () {
+            stop();
+            clearTimeout(scrollT);
+            scrollT = setTimeout(start, 160);
+        }, { passive: true });
+
         var t;
         window.addEventListener('resize', function () {
             clearTimeout(t); t = setTimeout(size, 200);

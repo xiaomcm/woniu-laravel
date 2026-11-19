@@ -93,6 +93,14 @@ $get = static fn (string $key, string $default = ''): string => (string) ($setti
                     <span class="track"></span><span>注册需邮箱验证</span>
                 </label>
                 <label class="switch">
+                    <input type="checkbox" name="register_agree_terms" value="1" {!! $get('register_agree_terms', '1') === '1' ? 'checked' : '' !!}>
+                    <span class="track"></span><span>注册需同意服务条款</span>
+                </label>
+                <label class="switch">
+                    <input type="checkbox" name="email_change_verify" value="1" {!! $get('email_change_verify', '1') === '1' ? 'checked' : '' !!}>
+                    <span class="track"></span><span>修改邮箱需邮箱验证码</span>
+                </label>
+                <label class="switch">
                     <input type="checkbox" name="review_enabled" value="1" {!! $get('review_enabled') === '1' ? 'checked' : '' !!}>
                     <span class="track"></span><span>上传需审核</span>
                 </label>
